@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     },
     title2: {
         textAlign: "center",
-        fontWeight: "light",
+        fontWeight: "normal",
         fontSize: 15,
         marginBottom: 14,
     },
