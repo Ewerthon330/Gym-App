@@ -1,67 +1,108 @@
-import { useSignIn } from "@clerk/clerk-expo";
+import { useSignUp } from "@clerk/clerk-expo";
 import { Link } from "expo-router";
 import { useState } from "react";
 import { Button, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-export default function LoginUser(){
-    const {isLoaded, setActive, signIn} = useSignIn();
+
+export default function Register(){
+
+    const { isLoaded, setActive, signUp} = useSignUp();
+
+
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
-    
-    async function handleSignIn(){
-        if (!isLoaded) return;
+    const [pendingEmailCode, setPendingEmailCode] = useState(false);
+    const [code, setCode] = useState ("")
+
+    async function handleSignUp(){
+        if (!isLoaded) return
 
         try{
-            const signinUser = await signIn.create({
-                identifier: email,
-                password: password,
+            await signUp.create({
+                emailAddress: email,
+                password: password
             })
 
-            await setActive({ session: signinUser.createdSessionId});
-            
-        }catch(err){
-            console.error(err);
+            await signUp.prepareEmailAddressVerification({ strategy: "email_code"})
+            setPendingEmailCode(true);
+
+        }catch(e){
+            console.log(e)
+        }
+    }
+
+
+    async function handleVerifyUser(){
+        if(!isLoaded) return;
+
+
+        try{
+            const completeSignup = await signUp?.attemptEmailAddressVerification({
+                code
+            })
+
+            await setActive({ session: completeSignup.createdSessionId})
+
+        }catch(e){
+            console.log(e);
         }
     }
 
     return(
         <View style={styles.container}>
-            <Text style={styles.title1}>Trust App</Text>
-            <Text style={styles.title2}>Bem VIndo Aluno</Text>
-            
-            <TextInput
-                autoCapitalize="none"
-                placeholder="Digite seu email..."
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                />
+            {!pendingEmailCode && (
+                <View>
+                    <Text style={styles.title}>Criar uma conta</Text>
 
-                <TextInput
-                autoCapitalize="none"
-                placeholder="Digite sua senha..."
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                />
+                    <TextInput
+                        autoCapitalize="none"
+                        placeholder="Digite seu email..."
+                        style={styles.input}
+                        value={email}
+                        onChangeText={setEmail}
+                        />
 
-                <Button
-                    title="Acessar"
-                    color="#121212"
-                    onPress={handleSignIn}
-                />
+                        <TextInput
+                        autoCapitalize="none"
+                        placeholder="Digite sua senha..."
+                        style={styles.input}
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                        />
 
-                <Link href="/register" asChild>
-                    <Pressable style={styles.button}>
-                        <Text>Ainda não possui uma conta? Cadastre-se</Text>
-                    </Pressable>
-                </Link>
+                        <Button
+                            title="Criar uma conta"
+                            color="#121212"
+                            onPress={handleSignUp}
+                        />
 
-                <Link href="/onBoarding" asChild>
-                  <Pressable style={styles.button}>
-                  </Pressable>
-                </Link>
+                        <Link href= "/loginUser" asChild>
+                            <Pressable style={styles.button}>
+                                <Text>Já possuia uma conta? Faça o login</Text>
+                            </Pressable>
+                        </Link>
+                </View>
+            )}
+
+            {pendingEmailCode &&(
+                <View>
+                    <Text style={styles.title}>Digite o código:</Text>
+                    <TextInput
+                        autoCapitalize="none"
+                        placeholder="Digite seu código..."
+                        style={styles.input}
+                        value={code}
+                        onChangeText={setCode}
+                        />
+                        <Button
+                        title="Ativar conta"
+                        color="#121212"
+                        onPress={handleVerifyUser}
+                        />
+                </View>
+            )}
+
         </View>
     )
 }
@@ -69,19 +110,13 @@ export default function LoginUser(){
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F0F0F0', // Cor de fundo cinza claro
+        justifyContent: "center",
+        padding: 20,
     },
-    title1: {
+    title: {
         textAlign: "center",
         fontWeight: "bold",
-        fontSize: 50,
-        fontStyle:"italic",
-        marginBottom: 14,
-    },
-    title2: {
-        textAlign: "center",
-        fontWeight: "normal",
-        fontSize: 15,
+        fontSize: 20,
         marginBottom: 14,
     },
     input: {
