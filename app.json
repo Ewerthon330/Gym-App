@@ -34,6 +34,13 @@
           "backgroundColor": "#ffffff"
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permitir acesso às fotos para selecionar vídeos.",
+          "cameraPermission": "Permitir acesso à câmera para gravar vídeos."
+        }
+      ],
       "expo-secure-store"
     ],
     "experiments": {

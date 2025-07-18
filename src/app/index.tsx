@@ -1,26 +1,8 @@
-import { Label, Text } from "@react-navigation/elements";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 export default function Index(){
     return(
-        
-        <View style={styles.container}>
-            <Label style={styles.labelTop}>
-            </Label>
-
-            <View style={styles.avatar}>
-            </View>
-
-            <View style={styles.text}>
-                <Text>Siga o videos para melhorar sua execução</Text>
-            </View>
-
-            <Pressable style ={styles.card1}>
-            </Pressable>
-
-            
-           
-        </View>
+        <View style={styles.container}></View>
     )
 }
 

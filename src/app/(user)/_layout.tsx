@@ -8,7 +8,7 @@ export default function UserLayout() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    if (!isSignedIn) router.replace("/src/app/(public)/onBoarding");
+    if (!isSignedIn) router.replace("/(public)/onBoarding");
   }, [isLoaded, isSignedIn, router]);
 
   return (
