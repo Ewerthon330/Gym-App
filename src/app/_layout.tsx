@@ -1,7 +1,7 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 export const publishKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -30,47 +30,46 @@ const InitialLayout = () => {
   const { isLoaded: isUserLoaded, user } = useUser();
   const segments = useSegments();
   const router = useRouter();
-  const [hasNavigated, setHasNavigated] = useState(false);
 
-  useEffect(() => {
-    if (!isAuthLoaded || !isUserLoaded || hasNavigated) return;
+  // Usar useMemo para calcular onde o usuário deveria estar
+  const shouldRedirect = useMemo(() => {
+    if (!isAuthLoaded || !isUserLoaded) return null;
 
-    const inAuthGroup = segments[0] === "(auth)";
-    const inPublicGroup = segments[0] === "(public)";
-    const inUserGroup = segments[0] === "(user)";
-    const inTeacherGroup = segments[0] === "(teacher)";
+    const currentSegment = segments[0];
+    const inAuthGroup = currentSegment === "(auth)";
+    const inPublicGroup = currentSegment === "(public)";
+    const inUserGroup = currentSegment === "(user)";
+    const inTeacherGroup = currentSegment === "(teacher)";
 
     if (isSignedIn) {
-      // Se já está na área correta, não navegar
+      // Se já está na área correta, não redirecionar
       if (inUserGroup || inTeacherGroup) {
-        setHasNavigated(true);
-        return;
+        return null;
       }
       
-      // Se está em área pública ou auth, redirecionar
-      if (inAuthGroup || inPublicGroup || !segments || segments.length === 0) {
-        if (user?.publicMetadata?.role === "(user)") {
-          router.replace("/(user)/home");
-        } else if (user?.publicMetadata?.role === "(teacher)") {
-          router.replace("/(teacher)/home");
+      // Se está em área pública/auth ou na raiz, redirecionar baseado no role
+      if (inAuthGroup || inPublicGroup || !currentSegment) {
+        const userRole = user?.publicMetadata?.role;
+        if (userRole === "(teacher)") {
+          return "/(teacher)/home";
         } else {
-          router.replace("/(user)/home");
+          return "/(user)/home";
         }
-        setHasNavigated(true);
       }
     } else {
       // Se não está logado e não está em área pública/auth
-      if (!inPublicGroup && !inAuthGroup && segments.length > 0) {
-        router.replace("/(public)/onBoarding");
-        setHasNavigated(true);
+      if (!inPublicGroup && !inAuthGroup && currentSegment) {
+        return "/(public)/onBoarding";
       }
     }
-  }, [isAuthLoaded, isUserLoaded, isSignedIn, segments, user?.publicMetadata?.role, hasNavigated]);
 
-  // Reset hasNavigated quando o status de login muda
-  useEffect(() => {
-    setHasNavigated(false);
-  }, [isSignedIn]);
+    return null;
+  }, [isAuthLoaded, isUserLoaded, isSignedIn, segments, user?.publicMetadata?.role]);
+
+  // Executar redirecionamento apenas quando necessário
+  if (shouldRedirect) {
+    router.replace(shouldRedirect as any);
+  }
 
   if (!isAuthLoaded || !isUserLoaded) {
     return (
