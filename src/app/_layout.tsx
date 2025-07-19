@@ -30,39 +30,49 @@ const InitialLayout = () => {
   const { isLoaded: isUserLoaded, user } = useUser();
   const segments = useSegments();
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
+  const [hasNavigated, setHasNavigated] = useState(false);
 
   useEffect(() => {
-    if (isAuthLoaded && isUserLoaded) {
-      setIsReady(true);
-    }
-  }, [isAuthLoaded, isUserLoaded]);
-
-  useEffect(() => {
-    if (!isReady) return;
+    if (!isAuthLoaded || !isUserLoaded || hasNavigated) return;
 
     const inAuthGroup = segments[0] === "(auth)";
     const inPublicGroup = segments[0] === "(public)";
+    const inUserGroup = segments[0] === "(user)";
+    const inTeacherGroup = segments[0] === "(teacher)";
 
     if (isSignedIn) {
-      if (inAuthGroup || inPublicGroup) {
+      // Se já está na área correta, não navegar
+      if (inUserGroup || inTeacherGroup) {
+        setHasNavigated(true);
+        return;
+      }
+      
+      // Se está em área pública ou auth, redirecionar
+      if (inAuthGroup || inPublicGroup || segments.length === 0) {
         if (user?.publicMetadata?.role === "(user)") {
           router.replace("/(user)/home");
         } else if (user?.publicMetadata?.role === "(teacher)") {
           router.replace("/(teacher)/home");
         } else {
-          // Se não tem role definido, assume como usuário
           router.replace("/(user)/home");
         }
+        setHasNavigated(true);
       }
     } else {
-      if (!inPublicGroup && !inAuthGroup) {
+      // Se não está logado e não está em área pública/auth
+      if (!inPublicGroup && !inAuthGroup && segments.length > 0) {
         router.replace("/(public)/onBoarding");
+        setHasNavigated(true);
       }
     }
-  }, [isReady, router, isSignedIn, segments, user]);
+  }, [isAuthLoaded, isUserLoaded, isSignedIn, segments, user?.publicMetadata?.role, hasNavigated]);
 
-  if (!isReady) {
+  // Reset hasNavigated quando o status de login muda
+  useEffect(() => {
+    setHasNavigated(false);
+  }, [isSignedIn]);
+
+  if (!isAuthLoaded || !isUserLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
