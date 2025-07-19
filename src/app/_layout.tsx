@@ -42,23 +42,25 @@ const InitialLayout = () => {
     if (!isReady) return;
 
     const inAuthGroup = segments[0] === "(auth)";
-    const inOnboarding = segments[0] === "onBoarding";
     const inPublicGroup = segments[0] === "(public)";
 
     if (isSignedIn) {
-      if (inAuthGroup || inOnboarding || inPublicGroup) {
+      if (inAuthGroup || inPublicGroup) {
         if (user?.publicMetadata?.role === "(user)") {
           router.replace("/(user)/home");
         } else if (user?.publicMetadata?.role === "(teacher)") {
           router.replace("/(teacher)/home");
+        } else {
+          // Se não tem role definido, assume como usuário
+          router.replace("/(user)/home");
         }
       }
     } else {
-      if (!inOnboarding && !inPublicGroup && !inAuthGroup) {
+      if (!inPublicGroup && !inAuthGroup) {
         router.replace("/(public)/onBoarding");
       }
     }
-  }, [isReady, router, isSignedIn, segments, user?.publicMetadata?.role]);
+  }, [isReady, router, isSignedIn, segments, user]);
 
   if (!isReady) {
     return (
