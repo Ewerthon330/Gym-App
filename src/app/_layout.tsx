@@ -48,7 +48,7 @@ const InitialLayout = () => {
       }
       
       // Se está em área pública ou auth, redirecionar
-      if (inAuthGroup || inPublicGroup || segments.length === 0) {
+      if (inAuthGroup || inPublicGroup || !segments || segments.length === 0) {
         if (user?.publicMetadata?.role === "(user)") {
           router.replace("/(user)/home");
         } else if (user?.publicMetadata?.role === "(teacher)") {
