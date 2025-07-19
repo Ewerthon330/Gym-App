@@ -1,7 +1,7 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 export const publishKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -30,10 +30,16 @@ const InitialLayout = () => {
   const { isLoaded: isUserLoaded, user } = useUser();
   const segments = useSegments();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Usar useMemo para calcular onde o usuário deveria estar
-  const shouldRedirect = useMemo(() => {
-    if (!isAuthLoaded || !isUserLoaded) return null;
+  // Aguardar a montagem do componente
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // Só navegar se o componente estiver montado e os dados carregados
+    if (!isMounted || !isAuthLoaded || !isUserLoaded) return;
 
     const currentSegment = segments[0];
     const inAuthGroup = currentSegment === "(auth)";
@@ -44,34 +50,27 @@ const InitialLayout = () => {
     if (isSignedIn) {
       // Se já está na área correta, não redirecionar
       if (inUserGroup || inTeacherGroup) {
-        return null;
+        return;
       }
       
       // Se está em área pública/auth ou na raiz, redirecionar baseado no role
       if (inAuthGroup || inPublicGroup || !currentSegment) {
         const userRole = user?.publicMetadata?.role;
-        if (userRole === "(teacher)") {
-          return "/(teacher)/home";
+        if (userRole === "teacher") {
+          router.replace("/(teacher)/home");
         } else {
-          return "/(user)/home";
+          router.replace("/(user)/home");
         }
       }
     } else {
       // Se não está logado e não está em área pública/auth
       if (!inPublicGroup && !inAuthGroup && currentSegment) {
-        return "/(public)/onBoarding";
+        router.replace("/(public)/onBoarding");
       }
     }
+  }, [isMounted, isAuthLoaded, isUserLoaded, isSignedIn, segments, user?.publicMetadata?.role]);
 
-    return null;
-  }, [isAuthLoaded, isUserLoaded, isSignedIn, segments, user?.publicMetadata?.role]);
-
-  // Executar redirecionamento apenas quando necessário
-  if (shouldRedirect) {
-    router.replace(shouldRedirect as any);
-  }
-
-  if (!isAuthLoaded || !isUserLoaded) {
+  if (!isMounted || !isAuthLoaded || !isUserLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
