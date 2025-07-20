@@ -1,4 +1,4 @@
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function onBoarding(){
@@ -21,12 +21,6 @@ export default function onBoarding(){
                     >
                     <Text style={styles.buttonText}>Professor</Text>
                 </Pressable>
-
-                <Link href="/(auth)/register" asChild>
-                    <Pressable style={styles.text}>
-                        <Text>Ainda não possui uma conta? Cadastre-se</Text>
-                    </Pressable>
-                </Link>
         </View>
     )
 }

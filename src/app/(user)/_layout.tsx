@@ -1,23 +1,20 @@
 import { useAuth } from "@clerk/clerk-expo";
-import { Stack, useRouter } from "expo-router";
-import { useEffect } from "react";
+import { Stack } from "expo-router";
 
-export default function UserLayout() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const router = useRouter();
+export default function AlunoLayout() {
+  const { isSignedIn } = useAuth();
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) router.replace("/(public)/onBoarding");
-  }, [isLoaded, isSignedIn, router]);
+  if (!isSignedIn) return null;
 
   return (
-    <Stack screenOptions={{
-      headerStyle: { backgroundColor: "#121212" },
-      headerTintColor: "#FFF"
-    }}>
-      <Stack.Screen name="home" options={{ title: "Home" }} />
-      <Stack.Screen name="profile" options={{ title: "Perfil" }} />
+    <Stack>
+      <Stack.Screen
+        name="home"
+        options={{
+          title: "Home Aluno",
+          headerBackVisible: false,
+        }}
+      />
     </Stack>
   );
 }

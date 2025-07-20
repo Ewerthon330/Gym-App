@@ -1,50 +1,58 @@
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { createWorkout, uploadVideo } from '../../../services/api';
 import { styles } from '../../styles/styles';
 
 export default function AddWorkoutScreen() {
   const { studentId } = useLocalSearchParams();
   const { userId } = useAuth();
+  const { user } = useUser();
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [videoUri, setVideoUri] = useState<string | null>(null);
-  const [exercises, setExercises] =  useState<string[]>([]);
+  const [exercises, setExercises] = useState<string[]>([]);
   const [currentExercise, setCurrentExercise] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  
-  const pickVideo = async () => {
-  try {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'videos',
-      allowsEditing: true,
-      quality: 1,
-    });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setVideoUri(result.assets[0].uri);
+  useEffect(() => {
+    if (user?.publicMetadata?.role !== "professor") {
+      Alert.alert("Acesso negado", "Somente professores podem prescrever treinos.");
+      router.replace("/(public)/onBoarding");
     }
-  } catch (err) {
-    setError('Erro ao selecionar vídeo');
-    console.error(err);
-  }
-};
+  }, [user]);
+
+  const pickVideo = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'videos',
+        allowsEditing: true,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setVideoUri(result.assets[0].uri);
+      }
+    } catch (err) {
+      setError('Erro ao selecionar vídeo');
+      console.error(err);
+    }
+  };
 
   const addExercise = () => {
-  if (currentExercise?.trim()) {
-    setExercises(prev => [...prev, currentExercise.trim()]);
-    setCurrentExercise('');
-  }
-};
+    if (currentExercise?.trim()) {
+      setExercises(prev => [...prev, currentExercise.trim()]);
+      setCurrentExercise('');
+    }
+  };
 
   const removeExercise = (indexToRemove: number) => {
-  setExercises(prev => prev.filter((_, index) => index !== indexToRemove));
-};
+    setExercises(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
 
   const handleSubmit = async () => {
     if (!name || !description || exercises.length === 0) {
@@ -68,9 +76,11 @@ export default function AddWorkoutScreen() {
         exercises,
       });
 
+      Alert.alert("Sucesso", "Treino criado com sucesso!");
       router.back();
-    } catch (err) {
-      setError('Erro ao criar treino');
+    } catch (err: any) {
+      const msg = err?.message ?? "Erro ao criar treino";
+      setError(msg);
       console.error(err);
     } finally {
       setLoading(false);

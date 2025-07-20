@@ -1,80 +1,68 @@
-import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { Slot, useRouter, useSegments } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-export const publishKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
-
-const tokenCache = {
-  async getToken(key: string) {
-    try {
-      return await SecureStore.getItemAsync(key);
-    } catch (err) {
-      console.error('Failed to get token:', err);
-      return null;
-    }
-  },
-  async saveToken(key: string, value: string) {
-    try {
-      await SecureStore.setItemAsync(key, value);
-    } catch (err) {
-      console.error('Failed to get token:', err);
-      return;
-    }
-  },
-};
-
-const InitialLayout = () => {
+export function RootNavigationHandler() {
   const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
   const { isLoaded: isUserLoaded, user } = useUser();
   const segments = useSegments();
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
+
+  const [ready, setReady] = useState(false);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     if (isAuthLoaded && isUserLoaded) {
-      setIsReady(true);
+      setReady(true);
     }
   }, [isAuthLoaded, isUserLoaded]);
 
   useEffect(() => {
-    if (!isReady) return;
+    if (!ready || hasRedirected.current) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
-    const inOnboarding = segments[0] === "onBoarding";
-    const inPublicGroup = segments[0] === "(public)";
+    const currentSegment = segments[0];
+    const role = user?.publicMetadata?.role ?? "user";
 
     if (isSignedIn) {
-      if (inAuthGroup || inOnboarding || inPublicGroup) {
-        if (user?.publicMetadata?.role === "(user)") {
-          router.replace("/(user)/home");
-        } else if (user?.publicMetadata?.role === "(teacher)") {
-          router.replace("/(teacher)/home");
-        }
+      const isInPrivateArea = currentSegment === "(user)" || currentSegment === "(teacher)";
+      if (!isInPrivateArea) {
+        hasRedirected.current = true;
+        setTimeout(() => {
+          if (role === "teacher") {
+            router.replace("/(teacher)/home");
+          } else {
+            router.replace("/(user)/home");
+          }
+        }, 0);
       }
     } else {
-      if (!inOnboarding && !inPublicGroup && !inAuthGroup) {
-        router.replace("/(public)/onBoarding");
+      const isInPublic = currentSegment === "(auth)" || currentSegment === "(public)";
+      if (!isInPublic && currentSegment) {
+        hasRedirected.current = true;
+        setTimeout(() => {
+          router.replace("/(public)/onBoarding");
+        }, 0);
       }
     }
-  }, [isReady, router, isSignedIn, segments, user?.publicMetadata?.role]);
+  }, [ready, isSignedIn, segments]);
 
-  if (!isReady) {
+  if (!ready) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.container}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
-  return <Slot />;
-};
-
-export default function RootLayout() {
-  return (
-    <ClerkProvider publishableKey="pk_test_ZXZvbHZpbmctc3RhcmxpbmctNDguY2xlcmsuYWNjb3VudHMuZGV2JA" tokenCache={tokenCache}>
-      <InitialLayout />
-    </ClerkProvider>
-  );
+return <Slot />;
 }
+
+
+const styles = StyleSheet.create({
+  container:{
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  }
+})
