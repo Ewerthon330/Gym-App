@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "240958036841",
+    "project_id": "gym-app-3c78c",
+    "storage_bucket": "gym-app-3c78c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:240958036841:android:d723704e8c37e71164fbf8",
+        "android_client_info": {
+          "package_name": "com.trustfitness.gymapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBW86vjdd7EYj2s-Jt22mz9a3d4kGHGXhM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

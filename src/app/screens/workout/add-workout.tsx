@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { createWorkout, uploadVideo } from '../../../services/api';
-import { styles } from '../../styles/styles';
+import { styles } from '../../../styles/styles';
 
 export default function AddWorkoutScreen() {
   const { studentId } = useLocalSearchParams();
@@ -19,12 +19,24 @@ export default function AddWorkoutScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [authorized, setAuthorized] = useState(false);
+
   useEffect(() => {
-    if (user?.publicMetadata?.role !== "professor") {
+    if (user?.publicMetadata?.role === "professor") {
+      setAuthorized(true);
+    } else {
       Alert.alert("Acesso negado", "Somente professores podem prescrever treinos.");
       router.replace("/(public)/onBoarding");
     }
   }, [user]);
+
+  if (!authorized) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  };
 
   const pickVideo = async () => {
     try {
@@ -59,6 +71,11 @@ export default function AddWorkoutScreen() {
       setError('Preencha todos os campos obrigatórios');
       return;
     }
+    if (!studentId) {
+      setError("ID do aluno não encontrado");
+      return;
+    }
+
 
     setLoading(true);
     try {

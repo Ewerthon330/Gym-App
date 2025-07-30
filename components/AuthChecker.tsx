@@ -12,7 +12,7 @@ export default function AuthRedirect() {
 
     if (isSignedIn) {
       // Verifica se é professor (adaptar conforme sua lógica)
-      const isProfessor = user?.publicMetadata?.role === 'professor';
+      const isProfessor = user?.unsafeMetadata?.role === 'professor';
       
       if (isProfessor) {
         router.replace('/(teacher)/home');

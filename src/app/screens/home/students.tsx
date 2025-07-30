@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { getStudents } from '../../../services/api';
-import { styles } from '../../styles/styles';
+import { styles } from '../../../styles/styles';
 
 interface Student {
   id: string;
@@ -20,24 +20,30 @@ export default function StudentsScreen() {
 
   const role = user?.publicMetadata?.role;
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        if (userId && role === 'professor') {
-          const data = await getStudents(userId);
-          setStudents(data);
-        } else {
-          setError("Acesso negado");
-        }
-      } catch (err) {
-        setError('Erro ao carregar alunos');
-        console.error(err);
-      } finally {
-        setLoading(false);
+  // Mesma lógica, mas com melhorias no carregamento inicial e feedback
+
+useEffect(() => {
+  if (!user) return;
+
+  const fetchStudents = async () => {
+    try {
+      if (userId && role === 'professor') {
+        const data = await getStudents(userId);
+        setStudents(data);
+      } else {
+        setError("Acesso negado");
       }
-    };
-    fetchStudents();
-  }, [userId, role]);
+    } catch (err) {
+      setError('Erro ao carregar alunos');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchStudents();
+}, [user, userId, role]);
+
 
   if (loading) {
     return (

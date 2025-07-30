@@ -5,11 +5,12 @@
     "strict": true,
     "paths": {
       "@/*": [
-        ".src/*"
+        "src/*"
       ]
     }
   },
   "include": [
+    "types/**/*.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",

@@ -1,14 +1,11 @@
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import { router } from 'expo-router';
+import { Slot, router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 
 export default function ProfessorLayout() {
   const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
   const { isLoaded: isUserLoaded, user } = useUser();
-
-  const role = user?.publicMetadata?.role;
-  const isProfessor = role === 'professor';
 
   useEffect(() => {
     if (!isAuthLoaded || !isUserLoaded) return;
@@ -18,28 +15,28 @@ export default function ProfessorLayout() {
       return;
     }
 
+    const role = user?.unsafeMetadata?.role;
+    const isProfessor = role === 'teacher';
+
     if (!isProfessor) {
       Alert.alert('Acesso negado', 'Somente professores podem acessar esta área');
       router.replace('/(public)/onBoarding');
     }
-  }, [isAuthLoaded, isUserLoaded, isSignedIn, isProfessor]);
+  }, [isAuthLoaded, isUserLoaded, isSignedIn, user]);
 
-  if (!isAuthLoaded || !isUserLoaded || !isSignedIn || !isProfessor) {
-    return null;
+  const isLoading = !isAuthLoaded || !isUserLoaded || !isSignedIn;
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator />
+      </View>
+    );
   }
 
-  return (
-  <View style={styles.container}>
-    <ActivityIndicator size="large" />
-  </View>
-);
+  return <Slot />;
 }
 
-
 const styles = StyleSheet.create({
-  container:{
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center"
-  }
-})
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+});

@@ -9,14 +9,14 @@ const tokenCache = {
     try {
       return await SecureStore.getItemAsync(key);
     } catch (err) {
-      return null;
+      console.log("Erro ao obter token:", err);
     }
   },
   async saveToken(key: string, value: string) {
     try {
       await SecureStore.setItemAsync(key, value);
     } catch (err) {
-      // ignore write errors
+      console.log("Erro ao salvar token:", err);
     }
   },
 };
@@ -39,8 +39,8 @@ function RootNavigationHandler() {
   useEffect(() => {
     if (!ready || hasRedirected.current) return;
 
-    const currentSegment = segments[0];
-    const role = user?.publicMetadata?.role ?? "user";
+    const currentSegment = segments[0]; // Ex: (public), (user), (teacher)
+    const role = user?.unsafeMetadata?.role ?? "user";
 
     if (isSignedIn) {
       const isInPrivateArea = currentSegment === "(user)" || currentSegment === "(teacher)";
@@ -50,7 +50,7 @@ function RootNavigationHandler() {
           if (role === "teacher") {
             router.replace("/(teacher)/home");
           } else {
-            router.replace("/(user)/home");
+            router.replace("/(public)/onBoarding");
           }
         }, 0);
       }
@@ -63,7 +63,7 @@ function RootNavigationHandler() {
         }, 0);
       }
     }
-  }, [ready, isSignedIn, segments]);
+  }, [ready, isSignedIn, segments, router, user]);
 
   if (!ready) {
     return (
@@ -78,7 +78,10 @@ function RootNavigationHandler() {
 
 export default function RootLayout() {
   return (
-    <ClerkProvider publishableKey="pk_test_ZXZvbHZpbmctc3RhcmxpbmctNDguY2xlcmsuYWNjb3VudHMuZGV2JA" tokenCache={tokenCache}>
+    <ClerkProvider
+      publishableKey="pk_test_c2Vuc2libGUtY291Z2FyLTYxLmNsZXJrLmFjY291bnRzLmRldiQ"
+      tokenCache={tokenCache}
+    >
       <RootNavigationHandler />
     </ClerkProvider>
   );

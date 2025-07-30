@@ -4,14 +4,19 @@
     "slug": "Gym-App",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "scheme": "gymapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Permitir uso da câmera",
+        "NSPhotoLibraryUsageDescription": "Permitir acesso à galeria"
+      }
     },
     "android": {
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
+      "package": "com.trustfitness.gymapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
