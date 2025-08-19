@@ -2,23 +2,29 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Button,
+  Dimensions,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 
-import * as ImagePicker from 'expo-image-picker';
-import { addDoc, collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-
-import { db, storage } from '@/services/firebase'; // ajuste conforme seu projeto
 import { useUser } from '@clerk/clerk-expo';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { doc, getDoc } from 'firebase/firestore';
+import { TabBar, TabView } from 'react-native-tab-view';
+
+import { createWorkout, deleteWorkout, getUserWorkouts } from '@/services/api';
+import { db } from '@/services/firebase';
+import colors from '@/styles/colors';
+import globalStyles from '@/styles/styles';
+import { Ionicons } from '@expo/vector-icons';
+
+const initialLayout = { width: Dimensions.get('window').width };
+const diasSemana = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 interface Treino {
   id: string;
@@ -33,71 +39,51 @@ export default function ProfileScreen() {
 
   const { user, isLoaded } = useUser();
 
-  const [treinos, setTreinos] = useState<Treino[]>([]);
+  const [index, setIndex] = useState(0);
+  const [routes] = useState(
+    diasSemana.map((dia) => ({ key: dia, title: dia.slice(0, 3).toUpperCase() }))
+  );
+
+  const [treinosPorDia, setTreinosPorDia] = useState<Record<string, Treino[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('');
+
   const [modalVisible, setModalVisible] = useState(false);
-  const [novoTreino, setNovoTreino] = useState({ name: '', videoUrl: '', day: '' });
-  const [uploading, setUploading] = useState(false);
-  const [loadingTreinos, setLoadingTreinos] = useState(false);
+  const [novoTreino, setNovoTreino] = useState({ name: '', videoUrl: '', day: '', volume: '' });
 
   useEffect(() => {
-    if (safeId) carregarTreinos();
+    const carregarDados = async () => {
+      if (!safeId) return;
+      setLoading(true);
+
+      try {
+        // Busca nome do aluno
+        const userDocRef = doc(db, 'users', safeId);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          setUserName(userSnap.data().name);
+        } else {
+          setUserName('Usuário');
+        }
+
+        // Busca treinos
+        const treinos = await getUserWorkouts(safeId);
+        const agrupado: Record<string, Treino[]> = {};
+        diasSemana.forEach((dia) => (agrupado[dia] = []));
+        treinos.forEach((treino: Treino) => {
+          agrupado[treino.day]?.push(treino);
+        });
+        setTreinosPorDia(agrupado);
+      } catch (err) {
+        Alert.alert('Erro ao carregar dados');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarDados();
   }, [safeId]);
-
-  async function carregarTreinos() {
-    setLoadingTreinos(true);
-    try {
-      const snapshot = await getDocs(collection(db, 'alunos', safeId, 'treinos'));
-      const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Treino[];
-      setTreinos(lista);
-    } catch (e) {
-      Alert.alert('Erro ao buscar treinos');
-      console.error('Erro ao buscar treinos:', e);
-    } finally {
-      setLoadingTreinos(false);
-    }
-  }
-
-  async function escolherVideo() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão negada', 'Precisamos da permissão para acessar a galeria');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      quality: 0.7,
-    });
-
-    if (result.canceled) {
-      return;
-    }
-
-    const localUri = result.assets[0].uri;
-    const filename = localUri.split('/').pop();
-    if (!filename) return;
-
-    setUploading(true);
-    try {
-      const response = await fetch(localUri);
-      const blob = await response.blob();
-
-      const videoRef = ref(storage, `videos/${safeId}/${filename}`);
-
-      await uploadBytes(videoRef, blob);
-
-      const url = await getDownloadURL(videoRef);
-
-      setNovoTreino((prev) => ({ ...prev, videoUrl: url }));
-
-      Alert.alert('Upload concluído', 'Vídeo carregado com sucesso!');
-    } catch (error) {
-      Alert.alert('Erro no upload', 'Não foi possível carregar o vídeo.');
-      console.error(error);
-    } finally {
-      setUploading(false);
-    }
-  }
 
   async function adicionarTreino() {
     if (!novoTreino.name || !novoTreino.day || !novoTreino.videoUrl) {
@@ -106,181 +92,222 @@ export default function ProfileScreen() {
     }
 
     try {
-      await addDoc(collection(db, 'alunos', safeId, 'treinos'), novoTreino);
-      setNovoTreino({ name: '', videoUrl: '', day: '' });
+      await createWorkout({
+        userId: safeId,
+        name: novoTreino.name,
+        videoUrl: novoTreino.videoUrl,
+        day: novoTreino.day.toLowerCase(),
+      });
+
+      setNovoTreino({ name: '', videoUrl: '', day: '', volume: '' });
       setModalVisible(false);
-      carregarTreinos();
+
+      // Atualiza treinos na tela
+      const treinos = await getUserWorkouts(safeId);
+      const agrupado: Record<string, Treino[]> = {};
+      diasSemana.forEach((dia) => (agrupado[dia] = []));
+      treinos.forEach((treino: Treino) => {
+        agrupado[treino.day]?.push(treino);
+      });
+      setTreinosPorDia(agrupado);
     } catch (e) {
       Alert.alert('Erro ao adicionar treino');
       console.error(e);
     }
   }
 
-  async function excluirTreino(idTreino: string) {
-    try {
-      await deleteDoc(doc(db, 'alunos', safeId, 'treinos', idTreino));
-      carregarTreinos();
-    } catch (e) {
-      Alert.alert('Erro ao excluir treino');
-      console.error(e);
-    }
-  }
+  const renderScene = ({ route }: { route: { key: string } }) => {
+    const treinos = treinosPorDia[route.key] || [];
+
+    const handleRemoveTreino = (treinoId: string) => {
+      Alert.alert(
+        'Remover Treino',
+        'Tem certeza que deseja remover este treino?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Remover',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteWorkout(safeId, treinoId);
+
+                setTreinosPorDia((prev) => {
+                  const novo = { ...prev };
+                  diasSemana.forEach((dia) => {
+                    if (novo[dia]) {
+                      novo[dia] = novo[dia].filter((t) => t.id !== treinoId);
+                    }
+                  });
+                  return novo;
+                });
+              } catch (error) {
+                Alert.alert('Erro', 'Não foi possível remover o treino.');
+                console.error(error);
+              }
+            },
+          },
+        ]
+      );
+    };
+
+    return (
+      <ScrollView style={globalStyles.containerStyle}>
+        {treinos.length > 0 ? (
+          treinos.map((treino) => (
+            <View key={treino.id} style={globalStyles.card}>
+              <Text style={globalStyles.textNameExerciseProfile}>{treino.name}</Text>
+
+              {treino.videoUrl ? (
+                <Pressable
+                  style={globalStyles.buttonShowVideoProfile}
+                  onPress={() => Linking.openURL(treino.videoUrl)}
+                >
+                  <Text style={globalStyles.textShowVideoProfile}>Revisar vídeo</Text>
+                </Pressable>
+              ) : (
+                <Text
+                  style={{ fontStyle: 'italic', color: colors.lightGray, marginTop: 5 }}
+                >
+                  Vídeo não disponível
+                </Text>
+              )}
+
+              {isLoaded && user?.unsafeMetadata?.role === 'teacher' && (
+                <Pressable
+                  onPress={() => handleRemoveTreino(treino.id)}
+                  style={globalStyles.removeButtonExercise}
+                >
+                  <Text style={{ color: colors.lightGray, fontWeight: 'bold' }}>Remover</Text>
+                </Pressable>
+              )}
+            </View>
+          ))
+        ) : (
+          <Text
+            style={{
+              fontStyle: 'italic',
+              color: colors.lightGray,
+              justifyContent: 'center',
+              left: 15,
+            }}
+          >
+            Nenhum treino cadastrado para este dia.
+          </Text>
+        )}
+      </ScrollView>
+    );
+  };
 
   if (!safeId) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>ID do aluno inválido.</Text>
+      <View style={globalStyles.container}>
+        <Text style={globalStyles.errorText}>ID do aluno inválido.</Text>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.sectionTitle}>Treinos Prescritos</Text>
+    <View style={globalStyles.containerProfileId}>
+      <Pressable
+        onPress={() => router.push('/(teacher)/home')}
+        style={{
+          position: 'absolute',
+          top: 50,
+          left: 20,
+          zIndex: 1,
+          padding: 10,
+        }}
+      >
+        <Ionicons name="arrow-back" size={30} color={colors.black} />
+      </Pressable>
+      <Text style={globalStyles.titleProfileId}>Perfil de {userName}</Text>
 
-      {loadingTreinos ? (
-        <ActivityIndicator size="large" />
-      ) : treinos.length === 0 ? (
-        <Text style={styles.emptyText}>Nenhum treino cadastrado.</Text>
-      ) : (
-        treinos.map((treino) => (
-          <View key={treino.id} style={styles.workoutCard}>
-            <Text style={styles.workoutName}>{treino.name}</Text>
-            <Text>{treino.day}</Text>
-            {treino.videoUrl ? (
-              <Text style={{ color: 'blue' }} onPress={() => {
-                // opcional: abrir vídeo no navegador
-              }}>
-                {treino.videoUrl}
-              </Text>
-            ) : null}
-            {isLoaded && user?.unsafeMetadata?.role === 'teacher' && (
-              <Pressable onPress={() => excluirTreino(treino.id)}>
-                <Text style={{ color: 'red', marginTop: 4 }}>Excluir</Text>
-              </Pressable>
-            )}
-          </View>
-        ))
-      )}
+      <View style={globalStyles.containerProfileUser}>
+        <Text style={globalStyles.textHomeUser}>Treinos Prescritos</Text>
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          initialLayout={initialLayout}
+          renderTabBar={(props) => (
+            <TabBar
+              {...props}
+              scrollEnabled
+              indicatorStyle={{ backgroundColor: colors.yellow }}
+              style={{ backgroundColor: colors.darkGray }}
+              activeColor="#FFCC00"
+              inactiveColor="#E0E0E0"
+            />
+          )}
+        />
+      </View>
 
       {isLoaded && user?.unsafeMetadata?.role === 'teacher' && (
         <>
-          <Pressable onPress={() => setModalVisible(true)} style={styles.addButton}>
-            <Text style={styles.addButtonText}>+ Treino</Text>
+          <Pressable
+            onPress={() => setModalVisible(true)}
+            style={globalStyles.addExerciseButton}
+          >
+            <Text style={{ color: colors.white, fontWeight: 'bold' }}>+ Treino</Text>
           </Pressable>
 
           <Modal visible={modalVisible} animationType="slide">
-            <View style={styles.modalContainer}>
-              <Text style={styles.sectionTitle}>Novo Treino</Text>
+            <View style={globalStyles.modalContainer}>
+              <Text style={globalStyles.sectionTitle}>Adicione um novo Treino</Text>
+
               <TextInput
                 placeholder="Nome do exercício"
-                style={styles.input}
+                style={globalStyles.input}
                 value={novoTreino.name}
                 onChangeText={(text) => setNovoTreino({ ...novoTreino, name: text })}
               />
+
+              <TextInput
+                placeholder="Volume de treino (ex: 4 séries de 10 repetições)"
+                style={globalStyles.input}
+                value={novoTreino.volume}
+                onChangeText={(text) => setNovoTreino({ ...novoTreino, volume: text })}
+              />
+
               <TextInput
                 placeholder="Dia da semana (ex: segunda)"
-                style={styles.input}
+                style={globalStyles.input}
                 value={novoTreino.day}
-                onChangeText={(text) => setNovoTreino({ ...novoTreino, day: text.toLowerCase() })}
+                onChangeText={(text) =>
+                  setNovoTreino({ ...novoTreino, day: text.toLowerCase() })
+                }
               />
 
-              <Pressable
-                style={styles.uploadButton}
-                onPress={escolherVideo}
-                disabled={uploading}
-              >
-                <Text style={styles.uploadButtonText}>
-                  {uploading ? 'Enviando vídeo...' : 'Selecionar Vídeo do Aparelho'}
-                </Text>
+              <TextInput
+                placeholder="Link do vídeo (Google Drive)"
+                style={globalStyles.input}
+                value={novoTreino.videoUrl}
+                onChangeText={(text) => setNovoTreino({ ...novoTreino, videoUrl: text })}
+              />
+
+              <Pressable onPress={adicionarTreino} style={globalStyles.saveButton}>
+                <Text style={globalStyles.saveButtonText}>Salvar</Text>
               </Pressable>
 
-              {novoTreino.videoUrl ? (
-                <Text style={{ marginTop: 8, color: 'green' }}>
-                  Vídeo carregado!
-                </Text>
-              ) : null}
-
-              <Button title="Salvar" onPress={adicionarTreino} />
-              <Button
-                title="Cancelar"
+              <Pressable
                 onPress={() => setModalVisible(false)}
-                color="gray"
-              />
+                style={[globalStyles.saveButton, { backgroundColor: colors.darkGray, marginTop: 10 }]}
+              >
+                <Text style={globalStyles.cancelButtonText}>Cancelar</Text>
+              </Pressable>
             </View>
           </Modal>
         </>
       )}
-    </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  workoutCard: {
-    backgroundColor: '#f4f4f4',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  workoutName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  emptyText: {
-    color: '#666',
-    fontStyle: 'italic',
-    marginVertical: 10,
-  },
-  modalContainer: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  input: {
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderColor: '#ccc',
-    marginBottom: 12,
-    backgroundColor: '#f9f9f9',
-  },
-  addButton: {
-    backgroundColor: '#1e90ff',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  uploadButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  uploadButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-});

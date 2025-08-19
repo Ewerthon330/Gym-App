@@ -1,7 +1,10 @@
+import colors from '@/styles/colors';
+import globalStyles from '@/styles/styles';
 import { useAuth, useSignIn, useUser } from '@clerk/clerk-expo';
-import { Link, useRouter } from 'expo-router'; // useRouter adicionado
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router'; // useRouter adicionado
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 
 export default function ProfessorSignIn() {
   const [email, setEmail] = useState('');
@@ -10,7 +13,6 @@ export default function ProfessorSignIn() {
   const { isSignedIn } = useAuth();
   const router = useRouter(); // hook router
   const { user } = useUser();
-
 
   const handleSignIn = async () => {
     if (!isLoaded) return;
@@ -60,17 +62,21 @@ export default function ProfessorSignIn() {
     }
   };
 
-  // Função para voltar para onBoarding
-  const handleBack = () => {
-    router.replace('/(public)/onBoarding');
-  };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login Professor</Text>
+    <View style={globalStyles.container}>
+
+      <Pressable
+        onPress={() => router.push('/(public)/onBoarding')}
+        style={globalStyles.backButton}
+      >
+        <Ionicons name="arrow-back" size={30} color={colors.black} />
+      </Pressable>
+
+      <Text style={globalStyles.title}>Trust Fitness App</Text>
+      <Text style={globalStyles.subtitle}>Professor</Text>
 
       <TextInput
-        style={styles.input}
+        style={globalStyles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -79,85 +85,16 @@ export default function ProfessorSignIn() {
       />
 
       <TextInput
-        style={styles.input}
+        style={globalStyles.input}
         placeholder="Senha"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
-      <Pressable style={styles.button} onPress={handleSignIn}>
-        <Text style={styles.buttonText}>Entrar</Text>
-      </Pressable>
-
-      <Link href="/(auth)/registerTeacher" asChild>
-        <Pressable style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Registrar-se</Text>
-        </Pressable>
-      </Link>
-
-      {/* Botão Voltar */}
-      <Pressable style={styles.backButton} onPress={handleBack}>
-        <Text style={styles.backButtonText}>Voltar</Text>
+      <Pressable style={globalStyles.buttonOnBoarding} onPress={handleSignIn}>
+        <Text style={globalStyles.buttonText}>Entrar</Text>
       </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  secondaryButton: {
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    marginBottom: 15,
-  },
-  secondaryButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  backButton: {
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#aaa',
-  },
-  backButtonText: {
-    color: '#555',
-    fontSize: 16,
-  },
-});

@@ -1,15 +1,17 @@
+/*import colors from '@/styles/colors';
+import globalStyles from '@/styles/styles';
 import { useSignUp, useUser } from '@clerk/clerk-expo';
+import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from 'expo-router';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import { db } from '../../services/firebase'; // ajuste conforme seu projeto
 
@@ -40,7 +42,21 @@ export default function RegisterTeacher() {
     }
 
     setIsLoading(true);
+
     try {
+      // 🔐 Verifica se o CREF está autorizado no Firestore
+      const crefDocRef = doc(db, 'crefs_autorizados', cref);
+      const crefDocSnap = await getDoc(crefDocRef);
+
+      if (!crefDocSnap.exists()) {
+        Alert.alert(
+          'CREF não autorizado',
+          'Este número de CREF não está habilitado para cadastro.'
+        );
+        setIsLoading(false);
+        return;
+      }
+
       await signUp.create({
         emailAddress: email,
         password,
@@ -103,22 +119,22 @@ export default function RegisterTeacher() {
 
   if (pendingVerification) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Verifique seu Email</Text>
+      <View style={globalStyles.container}>
+        <Text style={globalStyles.title}>Verifique seu Email</Text>
         <Text style={{ textAlign: 'center', marginBottom: 10 }}>
           Digite o código enviado para {email}
         </Text>
 
         <TextInput
-          style={styles.input}
+          style={globalStyles.input}
           placeholder="Código de verificação"
           value={code}
           onChangeText={setCode}
           editable={!isLoading}
         />
 
-        <Pressable style={styles.button} onPress={onPressVerify} disabled={isLoading}>
-          <Text style={styles.buttonText}>
+        <Pressable style={globalStyles.buttontCadPro} onPress={onPressVerify} disabled={isLoading}>
+          <Text style={globalStyles.buttonText}>
             {isLoading ? 'Verificando...' : 'Verificar Email'}
           </Text>
         </Pressable>
@@ -129,11 +145,24 @@ export default function RegisterTeacher() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Registro Professor</Text>
+    <View style={globalStyles.container}>
+      <Pressable
+        onPress={() => router.back()}
+        style={{
+          position: 'absolute',
+          top: 40,
+          left: 20,
+          zIndex: 1,
+          padding: 10,
+        }}
+      >
+        <Ionicons name="arrow-back" size={28} color={colors.black} />
+      </Pressable>
+
+      <Text style={globalStyles.title}>Cadastro de Professor</Text>
 
       <TextInput
-        style={styles.input}
+        style={globalStyles.input}
         placeholder="Nome"
         value={name}
         onChangeText={setName}
@@ -141,7 +170,7 @@ export default function RegisterTeacher() {
       />
 
       <TextInput
-        style={styles.input}
+        style={globalStyles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -151,7 +180,7 @@ export default function RegisterTeacher() {
       />
 
       <TextInput
-        style={styles.input}
+        style={globalStyles.input}
         placeholder="Senha"
         value={password}
         onChangeText={setPassword}
@@ -160,54 +189,30 @@ export default function RegisterTeacher() {
       />
 
       <TextInput
-        style={styles.input}
+        style={globalStyles.input}
         placeholder="CREF (ex: 123456-G/SP)"
         value={cref}
         onChangeText={setCref}
         editable={!isLoading}
       />
 
-      <Pressable style={styles.button} onPress={handleSignUp} disabled={isLoading}>
-        <Text style={styles.buttonText}>{isLoading ? 'Carregando...' : 'Registrar'}</Text>
+      <Pressable style={globalStyles.buttontCadPro} onPress={handleSignUp} disabled={isLoading}>
+        <Text style={globalStyles.buttonText}>
+          {isLoading ? 'Carregando...' : 'Cadastrar-se'}
+        </Text>
       </Pressable>
 
       {isLoading && <ActivityIndicator style={{ marginTop: 10 }} />}
 
       <Link href="/(auth)/loginTeacher" asChild>
-        <Pressable style={styles.secondaryButton} disabled={isLoading}>
-          <Text style={styles.secondaryButtonText}>Já tem conta? Faça login</Text>
+        <Pressable disabled={isLoading}>
+          <Text style={globalStyles.emptyButtonText}>Já tem uma conta? Faça login</Text>
         </Pressable>
       </Link>
     </View>
   );
-}
+}*/
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  secondaryButton: {
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#007AFF',
-  },
-  secondaryButtonText: { color: '#007AFF', fontSize: 16 },
-});
+export default function EmptyScreen() {
+  return null;
+}

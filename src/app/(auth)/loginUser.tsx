@@ -1,7 +1,10 @@
+import colors from "@/styles/colors";
+import globalStyles from "@/styles/styles";
 import { useAuth, useSignIn } from "@clerk/clerk-expo";
+import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Button, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 
 export default function LoginUser() {
     const { isLoaded, setActive, signIn } = useSignIn();
@@ -12,7 +15,7 @@ export default function LoginUser() {
     
     useEffect(() => {
       if (isSignedIn) {
-        router.replace('/(user)/home'); // Altere para sua rota principal
+        router.replace('/(user)/home');
       }
     }, [isSignedIn]);
 
@@ -44,13 +47,22 @@ export default function LoginUser() {
     if (!isLoaded) return null;
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title1}>Bem Vindo Aluno</Text>
+        <View style={globalStyles.container}>
+
+            <Pressable
+                onPress={() => router.push("/(public)/onBoarding")}
+                style={globalStyles.backButton}
+            >
+                <Ionicons name="arrow-back" size={30} color={colors.black} />
+            </Pressable>
+
+            <Text style={globalStyles.title}>Trust Fitness App</Text>
+            <Text style={globalStyles.subtitle}>Aluno</Text>
             
             <TextInput
                 autoCapitalize="none"
                 placeholder="Digite seu email..."
-                style={styles.input}
+                style={globalStyles.input}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -59,63 +71,23 @@ export default function LoginUser() {
             <TextInput
                 autoCapitalize="none"
                 placeholder="Digite sua senha..."
-                style={styles.input}
+                style={globalStyles.input}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
             />
 
-            <Button
-                title={isLoading ? "Carregando..." : "Acessar"}
-                color="#121212"
-                onPress={handleSignIn}
-                disabled={isLoading}
-            />
+            <Pressable style={globalStyles.buttonOnBoarding} onPress={handleSignIn}>
+                <Text style={globalStyles.buttonText}>Entrar</Text>
+            </Pressable>
 
             {isLoading && <ActivityIndicator style={{ marginTop: 10 }} />}
 
             <Link href="/(auth)/registerUser" asChild>
-                <Pressable style={styles.button}>
-                    <Text>Ainda não possui uma conta? Cadastre-se</Text>
+                <Pressable style={globalStyles.button}>
+                    <Text style={globalStyles.textButton}>Ainda não possui uma conta? Cadastre-se</Text>
                 </Pressable>
             </Link>
         </View>
     );
 }
-
-// Seus estilos permanecem os mesmos
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F0F0F0', // Cor de fundo cinza claro
-        justifyContent: "center",
-        padding: 20
-    },
-    title1: {
-        textAlign: "center",
-        fontWeight: "bold",
-        fontSize: 50,
-        fontStyle:"italic",
-        marginBottom: 14,
-    },
-    title2: {
-        textAlign: "center",
-        fontWeight: "normal",
-        fontSize: 15,
-        marginBottom: 14,
-    },
-    input: {
-        marginVertical: 4,
-        height: 50,
-        borderWidth: 1,
-        borderColor: "#121212",
-        borderRadius: 8,
-        padding: 10,
-        backgroundColor:"#fff"
-    },
-    button: {
-        margin: 8,
-        alignItems: "center",
-    },
-})

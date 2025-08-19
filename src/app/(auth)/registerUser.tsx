@@ -1,4 +1,7 @@
-import { useSignUp } from '@clerk/clerk-expo';
+import colors from '@/styles/colors';
+import globalStyles from '@/styles/styles';
+import { useAuth, useSignUp } from '@clerk/clerk-expo';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useState } from 'react';
@@ -6,15 +9,13 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
-import { db } from '../../services/firebase'; // ajuste conforme seu projeto
+import { db } from '../../services/firebase';
 
-// 🔁 Substitua pelo ID real do seu professor no Clerk
-const DEFAULT_TEACHER_ID = 'user_30avU7VHt7iwOlZY6d28lIYQVjG';
+const DEFAULT_TEACHER_ID = 'user_31Tj6VqeQJiBGsMlU4GDUQLe7ri';
 
 export default function RegisterUser() {
   const [name, setName] = useState('');
@@ -24,7 +25,8 @@ export default function RegisterUser() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { signUp, setActive, isLoaded } = useSignUp();
+  const { signUp, isLoaded } = useSignUp();
+  const { signOut } = useAuth();
 
   const handleSignUp = async () => {
     if (!isLoaded || !signUp) return;
@@ -56,18 +58,21 @@ export default function RegisterUser() {
   };
 
   const handleVerify = async () => {
-    if (!isLoaded || !setActive || !signUp) return;
+    if (!isLoaded || !signUp) return;
 
     setIsLoading(true);
     try {
       const completeSignUp = await signUp.attemptEmailAddressVerification({ code });
 
-      await setActive({ session: completeSignUp.createdSessionId });
+      if (completeSignUp.status !== 'complete') {
+        throw new Error('Verificação não concluída. Tente novamente.');
+      }
 
       const userId = completeSignUp.createdUserId;
       if (!userId) throw new Error('ID do usuário não foi retornado.');
 
-      // Salva aluno na coleção "users"
+      console.log('✅ Usuário verificado. Salvando no Firestore...');
+
       await setDoc(doc(db, 'users', userId), {
         name,
         email,
@@ -76,10 +81,26 @@ export default function RegisterUser() {
         createdAt: serverTimestamp(),
       });
 
-      router.replace('/(user)/home');
+      console.log('✅ Usuário salvo no Firestore com sucesso.');
+
+      await signOut();
+
+
+      Alert.alert(
+        'Verificação concluída',
+        'Sua conta foi criada com sucesso! Agora faça login para continuar.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/(auth)/loginUser'),
+          },
+        ]
+      );
     } catch (err: any) {
-      Alert.alert('Erro', err.errors?.[0]?.message ?? 'Erro na verificação');
-      console.log('Erro na verificação:', JSON.stringify(err, null, 2));
+      console.error('❌ Erro na verificação:', err);
+      const msg =
+        err.errors?.[0]?.message || err.message || 'Erro desconhecido na verificação';
+      Alert.alert('Erro', msg);
     } finally {
       setIsLoading(false);
     }
@@ -87,17 +108,21 @@ export default function RegisterUser() {
 
   if (pendingVerification) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Verifique seu Email</Text>
+      <View style={globalStyles.container}>
+        <Text style={globalStyles.title}>Verifique seu Email</Text>
         <TextInput
-          style={styles.input}
+          style={globalStyles.input}
           placeholder="Código"
           value={code}
           onChangeText={setCode}
           editable={!isLoading}
         />
-        <Pressable style={styles.button} onPress={handleVerify} disabled={isLoading}>
-          <Text style={styles.buttonText}>
+        <Pressable
+          style={globalStyles.buttonRegisterUser}
+          onPress={handleVerify}
+          disabled={isLoading}
+        >
+          <Text style={globalStyles.buttonText}>
             {isLoading ? 'Verificando...' : 'Verificar'}
           </Text>
         </Pressable>
@@ -107,19 +132,26 @@ export default function RegisterUser() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Cadastro de Aluno</Text>
+    <View style={globalStyles.container}>
+      <Pressable
+        onPress={() => router.push('/(auth)/loginUser')}
+        style={globalStyles.backButton}
+      >
+        <Ionicons name="arrow-back" size={30} color={colors.black} />
+      </Pressable>
+
+      <Text style={globalStyles.title}>Cadastro do Aluno</Text>
 
       <TextInput
-        style={styles.input}
-        placeholder="Nome"
+        style={globalStyles.input}
+        placeholder="Primeiro Nome"
         value={name}
         onChangeText={setName}
         editable={!isLoading}
       />
 
       <TextInput
-        style={styles.input}
+        style={globalStyles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -129,7 +161,7 @@ export default function RegisterUser() {
       />
 
       <TextInput
-        style={styles.input}
+        style={globalStyles.input}
         placeholder="Senha"
         value={password}
         onChangeText={setPassword}
@@ -137,34 +169,22 @@ export default function RegisterUser() {
         editable={!isLoading}
       />
 
-      <Pressable style={styles.button} onPress={handleSignUp} disabled={isLoading}>
-        <Text style={styles.buttonText}>
-          {isLoading ? 'Carregando...' : 'Registrar'}
+      <Pressable
+        style={globalStyles.buttonRegisterUser}
+        onPress={handleSignUp}
+        disabled={isLoading}
+      >
+        <Text style={globalStyles.buttonText}>
+          {isLoading ? 'Carregando...' : 'Cadastrar-se'}
         </Text>
       </Pressable>
 
-      {isLoading && <ActivityIndicator style={{ marginTop: 10 }} />}
+      <Pressable onPress={() => router.push('/(auth)/loginUser')}>
+        <Text style={globalStyles.textButtonCad}>
+          Já tem uma conta? Faça Login
+        </Text>
+        {isLoading && <ActivityIndicator style={{ marginTop: 10 }} />}
+      </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-});
