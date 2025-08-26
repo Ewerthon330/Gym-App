@@ -1,93 +1,70 @@
 import colors from "@/styles/colors";
+import { buttonStyles } from "@/styles/fonts";
 import globalStyles from "@/styles/styles";
 import { useAuth, useSignIn } from "@clerk/clerk-expo";
+import { Merienda_400Regular, useFonts } from "@expo-google-fonts/merienda";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput } from "react-native";
 
 export default function LoginUser() {
-    const { isLoaded, setActive, signIn } = useSignIn();
-    const { isSignedIn } = useAuth();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    
-    useEffect(() => {
-      if (isSignedIn) {
-        router.replace('/(user)/home');
-      }
-    }, [isSignedIn]);
+  const { isLoaded, setActive, signIn } = useSignIn();
+  const { isSignedIn } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-    async function handleSignIn() {
-        if (!isLoaded) return;
-        if (!email || !password) {
-          alert("Por favor, preencha todos os campos");
-          return;
-        }
+  // 🔹 Carregando a fonte Merienda
+  const [fontsLoaded] = useFonts({ Merienda_400Regular });
 
-        setIsLoading(true);
-        try {
-            const signinUser = await signIn.create({
-                identifier: email,
-                password: password,
-            });
-
-            await setActive({ session: signinUser.createdSessionId });
-            
-        } catch (err: any) {
-            if (__DEV__) {
-                console.error("Erro detalhado:", JSON.stringify(err, null, 2));
-            }
-        } finally {
-            setIsLoading(false);
-        }
+  async function handleSignIn() {
+    if (!isLoaded) return;
+    if (!email || !password) {
+      alert("Por favor, preencha todos os campos");
+      return;
     }
-    
-    if (!isLoaded) return null;
 
-    return (
-        <View style={globalStyles.container}>
+    setIsLoading(true);
+    try {
+      const signinUser = await signIn.create({ identifier: email, password });
+      await setActive({ session: signinUser.createdSessionId });
+    } catch (err: any) {
+      if (__DEV__) console.error("Erro detalhado:", JSON.stringify(err, null, 2));
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
-            <Pressable
-                onPress={() => router.push("/(public)/onBoarding")}
-                style={globalStyles.backButton}
-            >
-                <Ionicons name="arrow-back" size={30} color={colors.black} />
-            </Pressable>
+  if (!isLoaded || !fontsLoaded) return <ActivityIndicator style={{ flex: 1 }} />;
 
-            <Text style={globalStyles.title}>Trust Fitness App</Text>
-            <Text style={globalStyles.subtitle}>Aluno</Text>
-            
-            <TextInput
-                autoCapitalize="none"
-                placeholder="Digite seu email..."
-                style={globalStyles.input}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-            />
+  return (
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.yellow}} behavior={Platform.OS === 'android' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: colors.yellow }} keyboardShouldPersistTaps="handled">
+        <Pressable onPress={() => router.push("/(public)/onBoarding")} style={globalStyles.backButton}>
+          <Ionicons name="arrow-back" size={30} color={colors.black} />
+        </Pressable>
 
-            <TextInput
-                autoCapitalize="none"
-                placeholder="Digite sua senha..."
-                style={globalStyles.input}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
+        <Text style={globalStyles.title}>Personal Trust</Text>
 
-            <Pressable style={globalStyles.buttonOnBoarding} onPress={handleSignIn}>
-                <Text style={globalStyles.buttonText}>Entrar</Text>
-            </Pressable>
+        {/* 🔹 Subtítulo com Merienda */}
+        <Text style={{ ...globalStyles.subtitle, fontFamily: "Merienda_400Regular" }}>Aluno</Text>
 
-            {isLoading && <ActivityIndicator style={{ marginTop: 10 }} />}
+        <TextInput autoCapitalize="none" placeholder="Digite seu email..." style={globalStyles.input} value={email} onChangeText={setEmail} keyboardType="email-address" />
+        <TextInput autoCapitalize="none" placeholder="Digite sua senha..." style={globalStyles.input} value={password} onChangeText={setPassword} secureTextEntry />
 
-            <Link href="/(auth)/registerUser" asChild>
-                <Pressable style={globalStyles.button}>
-                    <Text style={globalStyles.textButton}>Ainda não possui uma conta? Cadastre-se</Text>
-                </Pressable>
-            </Link>
-        </View>
-    );
+        <Pressable style={globalStyles.buttonOnBoarding} onPress={handleSignIn}>
+          <Text style={buttonStyles.text}>Entrar</Text>
+        </Pressable>
+
+        {isLoading && <ActivityIndicator style={{ marginTop: 10 }} />}
+
+        <Link href="/(auth)/registerUser" asChild>
+          <Pressable style={globalStyles.button}>
+            <Text style={globalStyles.textButton}>Ainda não possui uma conta? Cadastre-se</Text>
+          </Pressable>
+        </Link>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }

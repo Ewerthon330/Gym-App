@@ -1,17 +1,20 @@
 import colors from '@/styles/colors';
+import { fonts, useAppFonts } from '@/styles/fonts'; // ✅ importar também fonts
 import globalStyles from '@/styles/styles';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
+  BackHandler,
   Dimensions,
+  FlatList,
   Linking,
   Pressable,
-  ScrollView,
   Text,
   TouchableWithoutFeedback,
   View
@@ -28,6 +31,7 @@ interface Treino {
   name: string;
   videoUrl: string;
   day: string;
+  volume: string;
 }
 
 export default function Home() {
@@ -45,10 +49,12 @@ export default function Home() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [exerciciosFeitos, setExerciciosFeitos] = useState<Record<string, boolean>>({});
 
+  const fontsLoaded = useAppFonts(); // ✅ hook para carregar fontes
+
   // Animações para menu e overlay
-  const fadeAnim = useRef(new Animated.Value(0)).current; // opacidade menu
-  const slideAnim = useRef(new Animated.Value(150)).current; // slide menu da direita
-  const overlayAnim = useRef(new Animated.Value(0)).current; // opacidade overlay
+  const fadeAnim = useRef(new Animated.Value(0)).current; 
+  const slideAnim = useRef(new Animated.Value(150)).current; 
+  const overlayAnim = useRef(new Animated.Value(0)).current; 
 
   const abrirMenu = () => {
     setMenuAberto(true);
@@ -64,7 +70,7 @@ export default function Home() {
         useNativeDriver: true,
       }),
       Animated.timing(overlayAnim, {
-        toValue: 0.5, // meio transparente
+        toValue: 0.5,
         duration: 250,
         useNativeDriver: true,
       }),
@@ -115,6 +121,26 @@ export default function Home() {
     }));
   };
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        Alert.alert(
+          "Sair do app",
+          "Você realmente deseja sair?",
+          [
+            { text: "Cancelar", style: "cancel" },
+            { text: "Sim", onPress: () => BackHandler.exitApp() },
+          ],
+          { cancelable: true }
+        );
+        return true; // impede o comportamento padrão
+      };
+
+      const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+
+    return () => subscription.remove();
+    }, [])
+  );
   useEffect(() => {
     const carregarTreinos = async () => {
       try {
@@ -149,64 +175,81 @@ export default function Home() {
   }, [user]);
 
   const renderScene = ({ route }: { route: { key: string } }) => {
-    const treinos = treinosPorDia[route.key] || [];
+  const treinos = treinosPorDia[route.key] || [];
 
+  return (
+    <FlatList style={globalStyles.containerStyle}
+      data={treinos}
+      keyExtractor={(_, index) => index.toString()}
+      contentContainerStyle={{ paddingBottom: 80 }} // espaço extra no fim
+      renderItem={({ item: treino }) => (
+        <View style={globalStyles.card}>
+          <Pressable
+            onPress={() => toggleFeito(treino.name)}
+            style={{
+              marginRight: 10,
+              width: 22,
+              height: 22,
+              borderRadius: 11,
+              borderWidth: 2,
+              borderColor: colors.black,
+              alignItems: 'center',
+              justifyContent: 'center',
+              left: 330,
+              top: 128,
+              backgroundColor: exerciciosFeitos[treino.name]
+                ? colors.green
+                : 'transparent',
+            }}
+          >
+            {exerciciosFeitos[treino.name] && (
+              <Ionicons name="checkmark" size={14} color={colors.white} />
+            )}
+          </Pressable>
+
+          <Text style={globalStyles.textNameExercise}>{treino.name}</Text>
+          <Text style={globalStyles.volume}>Volume:</Text>
+          <Text style={globalStyles.textVolumeExercise}>{treino.volume}</Text>
+          <Text style={globalStyles.rest}>Descanso:</Text>
+          <Text style={globalStyles.textRestExercise}>{treino.rest}</Text>
+
+          <Pressable
+            style={globalStyles.buttonShowVideo}
+            onPress={() => Linking.openURL(treino.videoUrl)}
+          >
+            <Text style={globalStyles.textShowVideo}>Ver execução</Text>
+          </Pressable>
+        </View>
+      )}
+      ListEmptyComponent={
+        <Text
+          style={{
+            fontStyle: 'italic',
+            color: colors.lightGray,
+            justifyContent: 'center',
+            left: 15,
+          }}
+        >
+          Nenhum treino cadastrado para este dia.
+        </Text>
+      }
+    />
+  );
+};
+
+
+  // ✅ Esperar fontes carregarem
+  if (!fontsLoaded || loading) {
     return (
-      <ScrollView style={globalStyles.containerStyle}>
-        {treinos.length > 0 ? (
-          treinos.map((treino, index) => (
-            <View key={index} style={globalStyles.card}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Pressable
-                    onPress={() => toggleFeito(treino.name)}
-                    style={{
-                      marginRight: 10,
-                      width: 22,
-                      height: 22,
-                      borderRadius: 11,
-                      borderWidth: 2,
-                      borderColor: colors.black,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      left: 318,
-                      top: 55,
-                      backgroundColor: exerciciosFeitos[treino.name] ? colors.green : 'transparent',
-                    }}
-                  >
-                    {exerciciosFeitos[treino.name] && (
-                      <Ionicons name="checkmark" size={14} color={colors.white} />
-                    )}
-                  </Pressable>
-                  <Text style={globalStyles.textNameExercise}>{treino.name}</Text>
-                </View>
-
-                <Pressable style={globalStyles.buttonShowVideo} onPress={() => Linking.openURL(treino.videoUrl)}>
-                  <Text style={globalStyles.textShowVideo}>Ver execução</Text>
-                </Pressable>
-              </View>
-            </View>
-          ))
-        ) : (
-          <Text style={{ fontStyle: 'italic', color: colors.lightGray, justifyContent: "center", left: 15 }}>
-            Nenhum treino cadastrado para este dia.
-          </Text>
-        )}
-      </ScrollView>
-    );
-  };
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={globalStyles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.yellow} />
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.yellow }}>
-      <Text style={globalStyles.bemVindo}>
+      <Text style={{ ...globalStyles.bemVindo}}>
         Olá, {userName || 'Usuário'}
       </Text>
 
@@ -226,7 +269,7 @@ export default function Home() {
       <View style={globalStyles.viewHomeUser}>
         <Text style={globalStyles.textHomeUser}>Rotina de Treinos</Text>
       </View>
-      {/* Overlay semitransparente para escurecer o fundo e fechar menu ao tocar */}
+      {/* Overlay semitransparente */}
       {menuAberto && (
         <TouchableWithoutFeedback onPress={fecharMenu}>
           <Animated.View
@@ -246,27 +289,7 @@ export default function Home() {
 
       {menuAberto && (
         <Animated.View
-          style={{
-            position: 'absolute',
-            top: 100,
-            right: 0,
-            width: '40%',
-            height: '15%',
-            backgroundColor: colors.lightGray,
-            zIndex: 10,
-            paddingTop: 80,
-            paddingHorizontal: 20,
-            shadowColor: colors.lightGray,
-            shadowOffset: { width: 2, height: 2 },
-            shadowOpacity: 1,
-            elevation: 5,
-            borderRadius: 8,
-            borderColor: colors.black,
-            borderWidth: 2,
-            opacity: fadeAnim,
-            transform: [{ translateX: slideAnim }],
-          }}
-        >
+          style={{... globalStyles.menuUser, opacity: fadeAnim, transform: [{ translateX: slideAnim }]}}>
           <Pressable
             onPress={() => {
               const phoneNumber = '5511984402797';
@@ -290,8 +313,8 @@ export default function Home() {
               zIndex: 1
             }}
           >
-            <Text style={globalStyles.contact}>Contato</Text>
-            <Ionicons name='call-outline' size={25} color={colors.black} />
+            <Text style={{...globalStyles.contact, fontFamily: fonts.robotoRegular}}>Contato</Text>
+            <Ionicons name='call-outline' size={25} color={colors.yellow} />
           </Pressable>
           <Pressable
             onPress={handleLogout}
@@ -305,7 +328,7 @@ export default function Home() {
               zIndex: 1
             }}
           >
-            <Text style={globalStyles.logoutUser}>Sair</Text>
+            <Text style={{...globalStyles.logoutUser, fontFamily: fonts.robotoRegular}}>Sair</Text>
             <Ionicons name='log-out-outline' size={25} color={colors.red} />
           </Pressable>
         </Animated.View>

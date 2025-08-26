@@ -7,6 +7,11 @@
     "scheme": "gymapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/LogoTrustFitness.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -50,7 +55,8 @@
         }
       ],
       "expo-secure-store",
-      "expo-video"
+      "expo-video",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

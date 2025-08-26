@@ -1,42 +1,57 @@
 import colors from '@/styles/colors';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { ActivityIndicator, Animated, Image, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-export default function Intro() {
+export default function SplashScreen() {
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push('/(public)/onBoarding');
-    }, );
+      // anima o fade out do container do indicador antes de navegar
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        router.push('/(public)/onBoarding');
+      });
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <View style={styles.container}>
-
+      {/* Logo */}
       <Image
         source={require("assets/images/LogoTrustFitness.png")}
         style={styles.image}
       />
 
+      {/* Curva amarela topo */}
       <Svg
         width={200}
-        height={250} 
+        height={250}
         viewBox="0 0 200 250"
         style={styles.topCurve}
       >
         <Path
-          fill="#eeb805ff"
+          fill="#FFCC00"
           d="M0,0 C150,100 80,150 250,230 L200,0 Z"
         />
       </Svg>
 
+      {/* Conteúdo central */}
       <View style={styles.content}>
         <Text style={styles.subtitle}>Seu app de treino</Text>
+        <Animated.View style={{ opacity: fadeAnim, top: 30, alignSelf: "center" }}>
+          <ActivityIndicator size="large" color="#FFCC00" />
+        </Animated.View>
       </View>
 
+      {/* Curva amarela baixo */}
       <Svg
         width={200}
         height={250}
@@ -44,7 +59,7 @@ export default function Intro() {
         style={styles.bottomCurve}
       >
         <Path
-          fill="#eeb805ff"
+          fill="#FFCC00"
           d="M200,300 C200,110 90,150 0,-30 L0,200 Z"
         />
       </Svg>
@@ -63,18 +78,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
   },
-  title: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: colors.black,
-  },
   subtitle: {
     fontSize: 25,
-    color: colors.yellow,
-    bottom: 60,
     left: 5,
-    justifyContent: "center",
-    alignContent: "center"
+    alignSelf: "center",
+    color: "#9b9b9bff",
+    bottom: 40,
+    textAlign: "center",
   },
   topCurve: {
     position: 'absolute',
@@ -86,11 +96,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
   },
-  image:{
+  image: {
     width: 400,
     height: 300,
     top: 270,
-    justifyContent: "center",
-    alignContent: "center"
+    alignSelf: "center",
   }
 });

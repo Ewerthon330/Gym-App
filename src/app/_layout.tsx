@@ -1,12 +1,16 @@
+import { db } from "@/services/firebase";
+import globalStyles from "@/styles/styles";
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { doc, getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 const tokenCache = {
   async getToken(key: string) {
-    return await SecureStore.getItemAsync(key);
+    const token = await SecureStore.getItemAsync(key);
+    return token;
   },
   async saveToken(key: string, value: string) {
     await SecureStore.setItemAsync(key, value);
@@ -14,66 +18,74 @@ const tokenCache = {
 };
 
 function AuthGuard() {
-  const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
+  const { isLoaded: isAuthLoaded, isSignedIn, userId, signOut } = useAuth();
   const { isLoaded: isUserLoaded, user } = useUser();
-  const segments = useSegments();
   const router = useRouter();
 
+  const [role, setRole] = useState<"user" | "teacher" | null>(null);
   const [ready, setReady] = useState(false);
-  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (isAuthLoaded && isUserLoaded) {
-      setReady(true);
-    }
-  }, [isAuthLoaded, isUserLoaded]);
+    async function fetchRole() {
 
-  useEffect(() => {
-    if (!ready || hasRedirected.current) return;
+      if (!isSignedIn || !userId) {
+        setRole(null);
+        setReady(true);
+        return;
+      }
 
-    const currentSegment = segments[0]; // Ex: (public), (user), (teacher)
-    const role = user?.unsafeMetadata?.role ?? null;
+      try {
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
 
-    if (isSignedIn) {
-      const isInPrivateArea =
-        currentSegment === "(user)" || currentSegment === "(teacher)";
-      if (!isInPrivateArea) {
-        hasRedirected.current = true;
-
-        if (role === "teacher") {
-          router.replace("/(teacher)/home");
-        } else if (role === "user") {
-          router.replace("/(user)/home");
+        if (!userSnap.exists()) {
+          await signOut();
+          setRole(null);
         } else {
-          router.replace("/(public)/onBoarding");
+          const data = userSnap.data();
+          setRole(
+            data.role === "teacher"
+              ? "teacher"
+              : data.role === "user"
+              ? "user"
+              : null
+          );
         }
-      }
-    } else {
-      const isInPublic =
-        currentSegment === "(auth)" || currentSegment === "(public)";
-      if (!isInPublic && currentSegment) {
-        hasRedirected.current = true;
-        router.replace("/(public)/onBoarding");
+      } catch (err) {
+        setRole(null);
+      } finally {
+        setReady(true);
       }
     }
-  }, [ready, isSignedIn, segments, router, user]);
+
+    if (isAuthLoaded && isUserLoaded) {
+      fetchRole();
+    } else {
+    }
+  }, [isAuthLoaded, isUserLoaded, isSignedIn, userId, user, signOut]);
+
+  useEffect(() => {
+
+    if (!ready) return;
+
+    if (!isSignedIn) {
+      router.replace("/(public)/splashScreen");
+    } else if (role === "teacher") {
+      router.replace("/(teacher)/home");
+    } else if (role === "user") {
+      router.replace("/(user)/home");
+    }
+  }, [ready, isSignedIn, role, router]);
 
   if (!ready) {
     return (
-      <View style={styles.container}>
+      <View style={globalStyles.loadingContainer}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
-  return (
-    <Stack
-      screenOptions={{
-        animation: "slide_from_right",
-        headerShown: false,
-      }}
-    />
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
 
 export default function RootLayout() {
@@ -86,11 +98,3 @@ export default function RootLayout() {
     </ClerkProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

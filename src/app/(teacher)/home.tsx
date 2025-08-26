@@ -1,4 +1,5 @@
 import colors from '@/styles/colors';
+import { useAppFonts } from '@/styles/fonts';
 import globalStyles from '@/styles/styles';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  BackHandler,
   FlatList,
   Pressable,
   Text,
@@ -16,7 +18,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { removeUser as removeUserAPI } from '../../services/api';
+import { removeUser } from '../../services/api';
 import { db } from '../../services/firebase';
 
 export default function HomeProfessor() {
@@ -28,107 +30,101 @@ export default function HomeProfessor() {
   const [alunos, setAlunos] = useState<any[]>([]);
   const [loadingAlunos, setLoadingAlunos] = useState(true);
   const [menuAberto, setMenuAberto] = useState(false);
+  const [checkedAccess, setCheckedAccess] = useState(false); // 🔹 flag de verificação
+  const [loading, setLoading] = useState(true);
 
-  // Animação
-  const slideAnim = useRef(new Animated.Value(200)).current; // menu fora da tela
-  const fadeAnim = useRef(new Animated.Value(0)).current; // menu opacidade
-  const overlayAnim = useRef(new Animated.Value(0)).current; // overlay opacidade
+  const fontsLoaded = useAppFonts();
+
+  // Animações
+  const slideAnim = useRef(new Animated.Value(200)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const overlayAnim = useRef(new Animated.Value(0)).current;
 
   const abrirMenu = () => {
     setMenuAberto(true);
     Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: 0.5,
-        duration: 250,
-        useNativeDriver: true,
-      }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.timing(overlayAnim, { toValue: 0.5, duration: 250, useNativeDriver: true }),
     ]).start();
   };
 
   const fecharMenu = () => {
     Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 200,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
+      Animated.timing(slideAnim, { toValue: 200, duration: 200, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start(() => setMenuAberto(false));
   };
 
-  const toggleMenu = () => {
-    if (menuAberto) {
-      fecharMenu();
-    } else {
-      abrirMenu();
-    }
-  };
+  const toggleMenu = () => (menuAberto ? fecharMenu() : abrirMenu());
 
+  // ------------------- BACK BUTTON -------------------
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert(
+        'Sair do app',
+        'Deseja realmente sair?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Sair', style: 'destructive', onPress: async () => {
+              await signOut();
+              BackHandler.exitApp();
+            }
+          },
+        ]
+      );
+      return true; // previne comportamento padrão
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, []);
+
+  // ------------------- AUTENTICAÇÃO E BUSCA -------------------
   useEffect(() => {
     if (!isLoaded || !user?.id) return;
 
-    const role = user?.unsafeMetadata?.role;
+    const checarAcesso = async () => {
+      try {
+        const userDocRef = doc(db, 'users', user.id);
+        const userSnap = await getDoc(userDocRef);
 
-    if (role !== 'teacher') {
-      Alert.alert('Acesso negado', 'Esta conta não tem permissão para acessar esta área.');
-      router.replace('/(public)/onBoarding');
-      return;
-    }
+        if (!userSnap.exists()) {
+          Alert.alert('Conta removida', 'Sua conta foi removida. Faça login novamente.');
+          await signOut();
+          return;
+        }
 
-    buscarNomeProfessor(user.id);
-    buscarAlunos(user.id);
+        const role = userSnap.data().role;
+        if (role !== 'teacher') {
+          Alert.alert('Acesso negado', 'Esta conta não tem permissão para acessar esta área.');
+          await signOut();
+          return;
+        }
+
+        setUserName(userSnap.data().name || 'Professor');
+        buscarAlunos(user.id);
+      } catch (error) {
+        console.error('Erro ao verificar acesso:', error);
+        Alert.alert('Erro', 'Não foi possível verificar acesso. Tente novamente.');
+      } finally {
+        setCheckedAccess(true); // 🔹 marca que verificação terminou
+        setLoading(false)
+      }
+    };
+
+    checarAcesso();
   }, [isLoaded, user]);
 
-  async function buscarNomeProfessor(teacherId: string) {
-    try {
-      const userDocRef = doc(db, 'users', teacherId);
-      const userSnap = await getDoc(userDocRef);
-
-      if (userSnap.exists()) {
-        setUserName(userSnap.data().name);
-      } else {
-        setUserName('Professor');
-      }
-    } catch (error) {
-      console.error('Erro ao buscar nome do professor:', error);
-      setUserName('Professor');
-    }
-  }
-
-  async function buscarAlunos(teacherId: string) {
+  const buscarAlunos = async (teacherId: string) => {
     setLoadingAlunos(true);
     try {
       const alunosRef = collection(db, 'users');
-      const q = query(
-        alunosRef,
-        where('role', '==', 'user'),
-        where('teacherId', '==', teacherId)
-      );
+      const q = query(alunosRef, where('role', '==', 'user'), where('teacherId', '==', teacherId));
       const querySnapshot = await getDocs(q);
 
-      const lista = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const lista = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAlunos(lista);
     } catch (error) {
       Alert.alert('Erro ao buscar alunos');
@@ -136,9 +132,8 @@ export default function HomeProfessor() {
     } finally {
       setLoadingAlunos(false);
     }
-  }
+  };
 
-  // Função para remover aluno com confirmação e logs
   const handleRemoveUser = (userId: string) => {
     Alert.alert(
       'Remover Aluno',
@@ -149,18 +144,13 @@ export default function HomeProfessor() {
           text: 'Remover',
           style: 'destructive',
           onPress: async () => {
-            console.log("🔹 Iniciando remoção do aluno:", userId);
-
             try {
-              await removeUserAPI(userId);
-              console.log("✅ removeUserAPI finalizou");
-
-              // Atualiza lista local
+              await removeUser(userId);
               setAlunos(prev => prev.filter(a => a.id !== userId));
               Alert.alert('Sucesso', 'Aluno removido com sucesso!');
             } catch (error) {
               Alert.alert('Erro', 'Não foi possível remover o aluno.');
-              console.error('❌ Erro ao remover aluno:', error);
+              console.error('Erro ao remover aluno:', error);
             }
           },
         },
@@ -178,17 +168,26 @@ export default function HomeProfessor() {
     }
   };
 
-  if (!isLoaded || loadingAlunos) {
+  // 🔹 Só renderiza a tela quando o usuário está carregado, verificado e alunos carregados
+  if (!isLoaded || !checkedAccess || loadingAlunos) {
     return (
-      <View style={globalStyles.loadingContainerHomeTeacher}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 10 }}>Carregando alunos...</Text>
+      <View style={globalStyles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.yellow} />
+        <Text style={{ marginTop: 10, color: colors.lightGray }}>Carregando alunos...</Text>
       </View>
     );
   }
 
+  if (!fontsLoaded || loading) {
+    return (
+      <View style={globalStyles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.yellow} />
+      </View>
+    );
+  }
   return (
     <View style={globalStyles.containerHomeTeacher}>
+      {/* Botão de menu */}
       <Pressable
         onPress={toggleMenu}
         style={{
@@ -204,7 +203,7 @@ export default function HomeProfessor() {
         <Ionicons name="menu" size={28} color={colors.black} />
       </Pressable>
 
-      {/* Overlay semitransparente */}
+      {/* Overlay */}
       {menuAberto && (
         <TouchableWithoutFeedback onPress={fecharMenu}>
           <Animated.View
@@ -225,27 +224,7 @@ export default function HomeProfessor() {
       {/* Menu animado */}
       {menuAberto && (
         <Animated.View
-          style={{
-            position: 'absolute',
-            top: 110,
-            right: 20,
-            height: 70,
-            width: 90,
-            backgroundColor: 'white',
-            padding: 10,
-            borderRadius: 8,
-            borderWidth: 1.5,
-            borderColor: colors.black,
-            shadowColor: colors.black,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 5,
-            zIndex: 20,
-            opacity: fadeAnim,
-            transform: [{ translateX: slideAnim }],
-          }}
-        >
+          style={{...globalStyles.menuTeacher, opacity: fadeAnim, transform: [{ translateX: slideAnim }]}}>
           <TouchableOpacity
             onPress={handleLogout}
             style={{ flexDirection: 'row', alignItems: 'center' }}
@@ -268,53 +247,57 @@ export default function HomeProfessor() {
         <Text style={globalStyles.line}>_____________________</Text>
 
         <FlatList
-          data={alunos}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={globalStyles.cardHomeTeacher}
-              onPress={() =>
-                router.push({
-                  pathname: '/screens/profile/[id]',
-                  params: { id: item.id },
-                })
-              }
-            >
-              <Ionicons
-                style={{
-                  position: 'absolute',
-                  left: 310,
-                  color: colors.black,
-                  backgroundColor: colors.yellow,
-                  borderRadius: 30,
-                  padding: 2,
-                }}
-                name="arrow-forward"
-                size={25}
-              />
-              <Text style={globalStyles.textNameHomeTeacher}>
-                {item.name ?? 'Aluno sem nome'}
-              </Text>
-              <Text style={globalStyles.textEmail}>{item.email}</Text>
+  data={alunos}
+  keyExtractor={(item) => item.id}
+  renderItem={({ item }) => (
+    <TouchableOpacity
+      style={globalStyles.cardHomeTeacher}
+      onPress={() =>
+        router.push({ pathname: '/screens/profile/[id]', params: { id: item.id }})
+      }
+    >
+      <Ionicons
+        style={{
+          position: 'absolute',
+          left: 310,
+          color: colors.black,
+          backgroundColor: colors.yellow,
+          borderRadius: 30,
+          padding: 2,
+        }}
+        name="arrow-forward"
+        size={25}
+      />
+      <Text style={globalStyles.textNameHomeTeacher}>
+        {item.name ?? 'Aluno sem nome'}
+      </Text>
+      <Text style={globalStyles.textEmail}>{item.email}</Text>
 
-              {/* Linha pequena centralizada */}
-              <View style={globalStyles.lineBetweenCards} />
+      <TouchableOpacity
+        style={globalStyles.removeStudentButton}
+        onPress={() => handleRemoveUser(item.id)}
+      >
+        <Text style={globalStyles.removeStudentButtonText}>Remover</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  )}
+  ListEmptyComponent={
+    <Text style={{ textAlign: 'center', marginTop: 60, color: colors.white }}>
+      Nenhum aluno cadastrado ainda.
+    </Text>
+  }
+  ItemSeparatorComponent={() => (
+    <View
+      style={{
+        height: 1.5,
+        backgroundColor: colors.yellow,
+        marginVertical: 10,
+      }}
+    />
+  )}
+  contentContainerStyle={{ paddingBottom: 80 }} // 🔹 espaço extra p/ último card não ficar colado
+/>
 
-              {/* Botão Remover aluno */}
-              <TouchableOpacity
-                style={globalStyles.removeStudentButton}
-                onPress={() => handleRemoveUser(item.id)}
-              >
-                <Text style={globalStyles.removeStudentButtonText}>Remover</Text>
-              </TouchableOpacity>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <Text style={{ textAlign: 'center', marginTop: 60, color: colors.white }}>
-              Nenhum aluno cadastrado ainda.
-            </Text>
-          }
-        />
       </View>
     </View>
   );

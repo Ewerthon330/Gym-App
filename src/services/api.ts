@@ -6,6 +6,8 @@ import {
   getDoc,
   getDocs,
   query,
+  serverTimestamp,
+  setDoc,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -18,7 +20,39 @@ export interface Treino {
   name: string;
   videoUrl: string;
   day: string;
+  volume: string;
+  rest: string; // 🔹 descanso entre séries
 }
+
+// -------------------- PROFESSOR --------------------
+
+// Criar professor
+export const createTeacher = async () => {
+  const teacherRef = doc(db, "teachers", "teacher_main");
+  await setDoc(teacherRef, {
+    name: "Ewerthon",
+    email: "professor@email.com",
+    createdAt: serverTimestamp(),
+  });
+};
+
+// -------------------- ALUNO --------------------
+
+// Criar aluno
+export const createStudent = async (
+  userId: string,
+  name: string,
+  email: string,
+  teacherId = "teacher_main"
+) => {
+  const studentRef = doc(db, "users", userId);
+  await setDoc(studentRef, {
+    name,
+    email,
+    teacherId,
+    createdAt: serverTimestamp(),
+  });
+};
 
 // -------------------- TREINOS --------------------
 
@@ -33,6 +67,8 @@ export const getUserWorkouts = async (userId: string): Promise<Treino[]> => {
         name: data.name || "",
         videoUrl: data.videoUrl || "",
         day: data.day || "",
+        volume: data.volume || "",
+        rest: data.rest || "", // 🔹 carrega descanso
       } as Treino;
     });
   } catch (error) {
@@ -47,17 +83,23 @@ export const createWorkout = async ({
   name,
   videoUrl,
   day,
+  volume,
+  rest,
 }: {
   userId: string;
   name: string;
   videoUrl: string;
   day: string;
+  volume: string;
+  rest: string;
 }) => {
   try {
     const docRef = await addDoc(collection(db, "users", userId, "treinos"), {
       name,
       videoUrl,
       day: day.toLowerCase(),
+      volume,
+      rest,
     });
     return { id: docRef.id };
   } catch (error) {
@@ -73,12 +115,16 @@ export const updateWorkout = async ({
   name,
   videoUrl,
   day,
+  volume,
+  rest,
 }: {
   userId: string;
   workoutId: string;
   name: string;
   videoUrl: string;
   day: string;
+  volume: string;
+  rest: string;
 }) => {
   try {
     const docRef = doc(db, "users", userId, "treinos", workoutId);
@@ -86,6 +132,8 @@ export const updateWorkout = async ({
       name,
       videoUrl,
       day: day.toLowerCase(),
+      volume,
+      rest,
     });
   } catch (error) {
     console.error("Erro ao atualizar treino:", error);
@@ -146,45 +194,19 @@ export const uploadVideo = async (uri: string) => {
   }
 };
 
-// -------------------- REMOVER ALUNO --------------------
+// -------------------- REMOVER ALUNO (Firestore apenas) --------------------
 export const removeUser = async (userId: string) => {
   try {
-    // Usando variável de ambiente diretamente
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
-    console.log("🌐 API URL usada:", apiUrl);
-
-    const res = await fetch(`${apiUrl}/remove-user`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    });
-
-    console.log("🔹 Fetch finalizado, status:", res.status);
-
-    if (!res.ok) {
-      const msg = await res.text().catch(() => '');
-      throw new Error(`Erro ao remover usuário no Clerk: ${res.status} ${msg}`);
-    }
-
-    // Remover treinos no Firestore
     const treinosSnap = await getDocs(collection(db, "users", userId, "treinos"));
-    console.log("🔹 Treinos encontrados:", treinosSnap.docs.length);
-
     for (const treino of treinosSnap.docs) {
       await deleteDoc(doc(db, "users", userId, "treinos", treino.id));
-      console.log("🔹 Treino removido:", treino.id);
     }
-
     await deleteDoc(doc(db, "users", userId));
-    console.log(`✅ Usuário ${userId} removido do Clerk e Firestore`);
   } catch (error) {
     console.error("❌ Erro ao remover aluno:", error);
     throw error;
   }
 };
-
-
 
 // -------------------- CHECAR USUÁRIO EXISTENTE NO CLERK --------------------
 export const checkUserExists = async (userId: string) => {

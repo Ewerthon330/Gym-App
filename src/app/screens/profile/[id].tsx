@@ -3,13 +3,13 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  FlatList,
   Linking,
   Modal,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 
 import { useUser } from '@clerk/clerk-expo';
@@ -17,21 +17,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import { TabBar, TabView } from 'react-native-tab-view';
 
-import { createWorkout, deleteWorkout, getUserWorkouts } from '@/services/api';
+import { createWorkout, deleteWorkout, getUserWorkouts, Treino } from '@/services/api';
 import { db } from '@/services/firebase';
 import colors from '@/styles/colors';
+import { fonts, useAppFonts } from '@/styles/fonts';
 import globalStyles from '@/styles/styles';
 import { Ionicons } from '@expo/vector-icons';
 
 const initialLayout = { width: Dimensions.get('window').width };
 const diasSemana = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
-
-interface Treino {
-  id: string;
-  name: string;
-  videoUrl: string;
-  day: string;
-}
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams();
@@ -49,7 +43,15 @@ export default function ProfileScreen() {
   const [userName, setUserName] = useState('');
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [novoTreino, setNovoTreino] = useState({ name: '', videoUrl: '', day: '', volume: '' });
+  const [novoTreino, setNovoTreino] = useState({
+    name: '',
+    videoUrl: '',
+    day: '',
+    volume: '',
+    rest: '',
+  });
+
+  const fontsLoaded = useAppFonts();
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -86,7 +88,13 @@ export default function ProfileScreen() {
   }, [safeId]);
 
   async function adicionarTreino() {
-    if (!novoTreino.name || !novoTreino.day || !novoTreino.videoUrl) {
+    if (
+      !novoTreino.name ||
+      !novoTreino.day ||
+      !novoTreino.videoUrl ||
+      !novoTreino.volume ||
+      !novoTreino.rest
+    ) {
       Alert.alert('Preencha todos os campos do treino');
       return;
     }
@@ -97,9 +105,11 @@ export default function ProfileScreen() {
         name: novoTreino.name,
         videoUrl: novoTreino.videoUrl,
         day: novoTreino.day.toLowerCase(),
+        volume: novoTreino.volume,
+        rest: novoTreino.rest,
       });
 
-      setNovoTreino({ name: '', videoUrl: '', day: '', volume: '' });
+      setNovoTreino({ name: '', videoUrl: '', day: '', volume: '', rest: '' });
       setModalVisible(false);
 
       // Atualiza treinos na tela
@@ -116,88 +126,121 @@ export default function ProfileScreen() {
     }
   }
 
-  const renderScene = ({ route }: { route: { key: string } }) => {
-    const treinos = treinosPorDia[route.key] || [];
+ const renderScene = ({ route }: { route: { key: string } }) => {
+  const treinos = treinosPorDia[route.key] || [];
 
-    const handleRemoveTreino = (treinoId: string) => {
-      Alert.alert(
-        'Remover Treino',
-        'Tem certeza que deseja remover este treino?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Remover',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await deleteWorkout(safeId, treinoId);
+  const handleRemoveTreino = (treinoId: string) => {
+    Alert.alert('Remover Treino', 'Tem certeza que deseja remover este treino?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteWorkout(safeId, treinoId);
 
-                setTreinosPorDia((prev) => {
-                  const novo = { ...prev };
-                  diasSemana.forEach((dia) => {
-                    if (novo[dia]) {
-                      novo[dia] = novo[dia].filter((t) => t.id !== treinoId);
-                    }
-                  });
-                  return novo;
-                });
-              } catch (error) {
-                Alert.alert('Erro', 'Não foi possível remover o treino.');
-                console.error(error);
-              }
-            },
-          },
-        ]
-      );
-    };
+            setTreinosPorDia((prev) => {
+              const novo = { ...prev };
+              diasSemana.forEach((dia) => {
+                if (novo[dia]) {
+                  novo[dia] = novo[dia].filter((t) => t.id !== treinoId);
+                }
+              });
+              return novo;
+            });
+          } catch (error) {
+            Alert.alert('Erro', 'Não foi possível remover o treino.');
+            console.error(error);
+          }
+        },
+      },
+    ]);
+  };
 
-    return (
-      <ScrollView style={globalStyles.containerStyle}>
-        {treinos.length > 0 ? (
-          treinos.map((treino) => (
-            <View key={treino.id} style={globalStyles.card}>
-              <Text style={globalStyles.textNameExerciseProfile}>{treino.name}</Text>
+  return (
+    <FlatList
+      data={treinos}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={{ padding: 10 }}
+      renderItem={({ item: treino }) => (
+        <View style={globalStyles.card}>
+          <Text style={globalStyles.textNameExerciseId}>{treino.name}</Text>
 
-              {treino.videoUrl ? (
-                <Pressable
-                  style={globalStyles.buttonShowVideoProfile}
-                  onPress={() => Linking.openURL(treino.videoUrl)}
-                >
-                  <Text style={globalStyles.textShowVideoProfile}>Revisar vídeo</Text>
-                </Pressable>
-              ) : (
-                <Text
-                  style={{ fontStyle: 'italic', color: colors.lightGray, marginTop: 5 }}
-                >
-                  Vídeo não disponível
-                </Text>
-              )}
-
-              {isLoaded && user?.unsafeMetadata?.role === 'teacher' && (
-                <Pressable
-                  onPress={() => handleRemoveTreino(treino.id)}
-                  style={globalStyles.removeButtonExercise}
-                >
-                  <Text style={{ color: colors.lightGray, fontWeight: 'bold' }}>Remover</Text>
-                </Pressable>
-              )}
-            </View>
-          ))
-        ) : (
+          {treino.volume ? (
+            <Text style={globalStyles.textVolumeExerciseId}>{treino.volume}</Text>
+          ) : null}
           <Text
             style={{
-              fontStyle: 'italic',
-              color: colors.lightGray,
-              justifyContent: 'center',
-              left: 15,
+              fontFamily: fonts.roboto700B,
+              left: 10,
+              fontSize: 17,
+              color: colors.green,
+              textDecorationLine: 'underline',
             }}
           >
-            Nenhum treino cadastrado para este dia.
+            Volume:
           </Text>
-        )}
-      </ScrollView>
-    );
-  };
+
+          {treino.rest ? (
+            <Text style={globalStyles.textRestExerciseId}>{treino.rest}</Text>
+          ) : null}
+          <Text
+            style={{
+              fontFamily: fonts.roboto700B,
+              left: 10,
+              bottom: 15,
+              fontSize: 17,
+              color: colors.red,
+              textDecorationLine: 'underline',
+            }}
+          >
+            Descanso:
+          </Text>
+
+          {treino.videoUrl ? (
+            <Pressable
+              style={globalStyles.buttonShowVideoProfile}
+              onPress={() => Linking.openURL(treino.videoUrl)}
+            >
+              <Text style={globalStyles.textShowVideoProfile}>Revisar vídeo</Text>
+            </Pressable>
+          ) : (
+            <Text
+              style={{ fontStyle: 'italic', color: colors.lightGray, marginTop: 5 }}
+            >
+              Vídeo não disponível
+            </Text>
+          )}
+
+          {isLoaded && user?.unsafeMetadata?.role === 'teacher' && (
+            <Pressable
+              onPress={() => handleRemoveTreino(treino.id)}
+              style={globalStyles.removeButtonExercise}
+            >
+              <Text style={{ color: colors.lightGray, fontWeight: 'bold' }}>
+                Remover
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+      ListEmptyComponent={
+        <Text
+          style={{
+            fontStyle: 'italic',
+            color: colors.lightGray,
+            justifyContent: 'center',
+            left: 15,
+          }}
+        >
+          Nenhum treino cadastrado para este dia.
+        </Text>
+      }
+      ListFooterComponent={<View style={{ height: 100 }} />} // espaço extra
+    />
+  );
+};
+
 
   if (!safeId) {
     return (
@@ -207,10 +250,10 @@ export default function ProfileScreen() {
     );
   }
 
-  if (loading) {
+  if (!fontsLoaded || loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={globalStyles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.yellow} />
       </View>
     );
   }
@@ -221,10 +264,9 @@ export default function ProfileScreen() {
         onPress={() => router.push('/(teacher)/home')}
         style={{
           position: 'absolute',
-          top: 50,
+          top: 60,
           left: 20,
           zIndex: 1,
-          padding: 10,
         }}
       >
         <Ionicons name="arrow-back" size={30} color={colors.black} />
@@ -257,7 +299,9 @@ export default function ProfileScreen() {
             onPress={() => setModalVisible(true)}
             style={globalStyles.addExerciseButton}
           >
-            <Text style={{ color: colors.white, fontWeight: 'bold' }}>+ Treino</Text>
+            <Text style={{ color: colors.black, fontFamily: fonts.vastShadow }}>
+              + Treino
+            </Text>
           </Pressable>
 
           <Modal visible={modalVisible} animationType="slide">
@@ -276,6 +320,13 @@ export default function ProfileScreen() {
                 style={globalStyles.input}
                 value={novoTreino.volume}
                 onChangeText={(text) => setNovoTreino({ ...novoTreino, volume: text })}
+              />
+
+              <TextInput
+                placeholder="Tempo de descanso (ex: 60s ou 1min)"
+                style={globalStyles.input}
+                value={novoTreino.rest}
+                onChangeText={(text) => setNovoTreino({ ...novoTreino, rest: text })}
               />
 
               <TextInput
@@ -300,7 +351,10 @@ export default function ProfileScreen() {
 
               <Pressable
                 onPress={() => setModalVisible(false)}
-                style={[globalStyles.saveButton, { backgroundColor: colors.darkGray, marginTop: 10 }]}
+                style={[
+                  globalStyles.saveButton,
+                  { backgroundColor: colors.darkGray, marginTop: 10 },
+                ]}
               >
                 <Text style={globalStyles.cancelButtonText}>Cancelar</Text>
               </Pressable>

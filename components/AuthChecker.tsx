@@ -1,5 +1,5 @@
 // components/AuthRedirect.tsx
-import { useAuth, useUser } from '@clerk/clerk-expo';
+/*import { useAuth, useUser } from '@clerk/clerk-expo';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 
@@ -25,4 +25,4 @@ export default function AuthRedirect() {
   }, [isLoaded, isSignedIn, user]);
 
   return null;
-}
+}*/
