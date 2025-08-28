@@ -243,19 +243,23 @@ export default function HomeProfessor() {
       <Text style={globalStyles.bemVindo}>Olá, {userName || 'Usuário'}</Text>
 
       <View style={globalStyles.containerCardsTeacher}>
-        <Text style={globalStyles.textHomeTeacher}>Meus Alunos</Text>
-        <Text style={globalStyles.line}>_____________________</Text>
+        <Text style={globalStyles.textHomeTeacher}>
+          Meus Alunos
+        </Text>
+        <Text style={globalStyles.line}>
+          _____________________
+        </Text>
 
         <FlatList
-  data={alunos}
-  keyExtractor={(item) => item.id}
-  renderItem={({ item }) => (
-    <TouchableOpacity
-      style={globalStyles.cardHomeTeacher}
-      onPress={() =>
-        router.push({ pathname: '/screens/profile/[id]', params: { id: item.id }})
-      }
-    >
+          data={alunos}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={globalStyles.cardHomeTeacher}
+              onPress={() =>
+                router.push({ pathname: '/screens/profile/[id]', params: { id: item.id }})
+              }
+        >
       <Ionicons
         style={{
           position: 'absolute',
@@ -277,7 +281,9 @@ export default function HomeProfessor() {
         style={globalStyles.removeStudentButton}
         onPress={() => handleRemoveUser(item.id)}
       >
-        <Text style={globalStyles.removeStudentButtonText}>Remover</Text>
+        <Text style={globalStyles.removeStudentButtonText}>
+          Remover
+        </Text>
       </TouchableOpacity>
     </TouchableOpacity>
   )}

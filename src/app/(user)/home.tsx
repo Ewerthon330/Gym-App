@@ -207,11 +207,21 @@ export default function Home() {
             )}
           </Pressable>
 
-          <Text style={globalStyles.textNameExercise}>{treino.name}</Text>
-          <Text style={globalStyles.volume}>Volume:</Text>
-          <Text style={globalStyles.textVolumeExercise}>{treino.volume}</Text>
-          <Text style={globalStyles.rest}>Descanso:</Text>
-          <Text style={globalStyles.textRestExercise}>{treino.rest}</Text>
+          <Text style={globalStyles.textNameExercise}>
+            {treino.name}
+          </Text>
+          <Text style={globalStyles.volume}>
+            Volume:
+          </Text>
+          <Text style={globalStyles.textVolumeExercise}>
+            {treino.volume}
+          </Text>
+          <Text style={globalStyles.rest}>
+            Descanso:
+          </Text>
+          <Text style={globalStyles.textRestExercise}>
+            {treino.rest}
+          </Text>
 
           <Pressable
             style={globalStyles.buttonShowVideo}

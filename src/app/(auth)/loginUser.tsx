@@ -41,7 +41,9 @@ export default function LoginUser() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.yellow}} behavior={Platform.OS === 'android' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: colors.yellow }} keyboardShouldPersistTaps="handled">
-        <Pressable onPress={() => router.push("/(public)/onBoarding")} style={globalStyles.backButton}>
+        <Pressable
+          onPress={() => router.push("/(public)/onBoarding")}
+          style={globalStyles.backButton}>
           <Ionicons name="arrow-back" size={30} color={colors.black} />
         </Pressable>
 
@@ -50,8 +52,20 @@ export default function LoginUser() {
         {/* 🔹 Subtítulo com Merienda */}
         <Text style={{ ...globalStyles.subtitle, fontFamily: "Merienda_400Regular" }}>Aluno</Text>
 
-        <TextInput autoCapitalize="none" placeholder="Digite seu email..." style={globalStyles.input} value={email} onChangeText={setEmail} keyboardType="email-address" />
-        <TextInput autoCapitalize="none" placeholder="Digite sua senha..." style={globalStyles.input} value={password} onChangeText={setPassword} secureTextEntry />
+        <TextInput autoCapitalize="none"
+          placeholder="Digite seu email..."
+          style={globalStyles.input}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+        />
+        <TextInput autoCapitalize="none"
+          placeholder="Digite sua senha..."
+          style={globalStyles.input}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
         <Pressable style={globalStyles.buttonOnBoarding} onPress={handleSignIn}>
           <Text style={buttonStyles.text}>Entrar</Text>

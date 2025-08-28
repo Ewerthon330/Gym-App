@@ -69,8 +69,17 @@ export default function ProfessorSignIn() {
         <Text style={globalStyles.title}>Personal Trust</Text>
         <Text style={{ ...globalStyles.subtitle, fontFamily: 'Merienda_400Regular' }}>Professor</Text>
 
-        <TextInput style={globalStyles.input} placeholder="Digite seu email..." value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-        <TextInput style={globalStyles.input} placeholder="Digite sua senha..." value={password} onChangeText={setPassword} secureTextEntry />
+        <TextInput style={globalStyles.input}
+          placeholder="Digite seu email..."
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none" />
+        <TextInput style={globalStyles.input}
+          placeholder="Digite sua senha..."
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry />
 
         <Pressable style={buttonStyles.onBoarding} onPress={handleSignIn}>
           <Text style={buttonStyles.text}>Entrar</Text>

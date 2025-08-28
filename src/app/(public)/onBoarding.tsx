@@ -24,12 +24,16 @@ export default function OnBoarding() {
 
       {/* 🔹 Botão Aluno */}
       <Pressable style={globalStyles.buttonOnBoarding} onPress={() => router.push("/(auth)/loginUser")}>
-        <Text style={buttonStyles.text}>Aluno</Text>
+        <Text style={buttonStyles.text}>
+          Aluno
+        </Text>
       </Pressable>
 
       {/* 🔹 Botão Professor */}
       <Pressable style={buttonStyles.onBoarding} onPress={() => router.push("/(auth)/loginTeacher")}>
-        <Text style={buttonStyles.text}>Professor</Text>
+        <Text style={buttonStyles.text}>
+          Professor
+        </Text>
       </Pressable>
     </View>
   );

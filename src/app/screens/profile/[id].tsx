@@ -245,7 +245,9 @@ export default function ProfileScreen() {
   if (!safeId) {
     return (
       <View style={globalStyles.container}>
-        <Text style={globalStyles.errorText}>ID do aluno inválido.</Text>
+        <Text style={globalStyles.errorText}>
+          ID do aluno inválido.
+        </Text>
       </View>
     );
   }
@@ -271,10 +273,14 @@ export default function ProfileScreen() {
       >
         <Ionicons name="arrow-back" size={30} color={colors.black} />
       </Pressable>
-      <Text style={globalStyles.titleProfileId}>Perfil de {userName}</Text>
+      <Text style={globalStyles.titleProfileId}>
+        Perfil de {userName}
+      </Text>
 
       <View style={globalStyles.containerProfileUser}>
-        <Text style={globalStyles.textHomeUser}>Treinos Prescritos</Text>
+        <Text style={globalStyles.textHomeUser}>
+          Treinos Prescritos
+        </Text>
         <TabView
           navigationState={{ index, routes }}
           renderScene={renderScene}
@@ -306,7 +312,9 @@ export default function ProfileScreen() {
 
           <Modal visible={modalVisible} animationType="slide">
             <View style={globalStyles.modalContainer}>
-              <Text style={globalStyles.sectionTitle}>Adicione um novo Treino</Text>
+              <Text style={globalStyles.sectionTitle}>
+                Adicione um novo Treino
+              </Text>
 
               <TextInput
                 placeholder="Nome do exercício"
@@ -356,7 +364,9 @@ export default function ProfileScreen() {
                   { backgroundColor: colors.darkGray, marginTop: 10 },
                 ]}
               >
-                <Text style={globalStyles.cancelButtonText}>Cancelar</Text>
+                <Text style={globalStyles.cancelButtonText}>
+                  Cancelar
+                </Text>
               </Pressable>
             </View>
           </Modal>
