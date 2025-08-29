@@ -2,6 +2,7 @@
   "expo": {
     "name": "Gym-App",
     "slug": "Gym-App",
+    "owner": "ewedevelopment",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "gymapp",
@@ -57,7 +58,8 @@
       ],
       "expo-secure-store",
       "expo-video",
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
