@@ -161,7 +161,7 @@ export default function ProfileScreen() {
     <FlatList
       data={treinos}
       keyExtractor={(item) => item.id}
-      contentContainerStyle={{ padding: 10 }}
+      contentContainerStyle={{ padding: 20 }}
       renderItem={({ item: treino }) => (
         <View style={globalStyles.card}>
           <Text style={globalStyles.textNameExerciseId}>{treino.name}</Text>
@@ -172,7 +172,7 @@ export default function ProfileScreen() {
           <Text
             style={{
               fontFamily: fonts.roboto700B,
-              left: 10,
+              left: 12,
               fontSize: 17,
               color: colors.green,
               textDecorationLine: 'underline',
@@ -187,7 +187,7 @@ export default function ProfileScreen() {
           <Text
             style={{
               fontFamily: fonts.roboto700B,
-              left: 10,
+              left: 12,
               bottom: 15,
               fontSize: 17,
               color: colors.red,
@@ -236,7 +236,7 @@ export default function ProfileScreen() {
           Nenhum treino cadastrado para este dia.
         </Text>
       }
-      ListFooterComponent={<View style={{ height: 100 }} />} // espaço extra
+      ListFooterComponent={<View style={{ height: 180 }} />} // espaço extra
     />
   );
 };
@@ -266,7 +266,7 @@ export default function ProfileScreen() {
         onPress={() => router.push('/(teacher)/home')}
         style={{
           position: 'absolute',
-          top: 60,
+          top: 68,
           left: 20,
           zIndex: 1,
         }}

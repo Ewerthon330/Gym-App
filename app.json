@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Gym-App",
+    "name": "Personal Trust",
     "slug": "Gym-App",
     "owner": "ewedevelopment",
     "version": "1.0.0",
@@ -8,6 +8,9 @@
     "scheme": "gymapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
+    "icon": "./assets/images/icon.png",
+    
     "splash": {
       "image": "./assets/images/LogoTrustFitness.png",
       "resizeMode": "contain",
@@ -28,7 +31,7 @@
       ],
       "package": "com.trustfitness.gymapp",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true

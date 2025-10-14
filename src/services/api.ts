@@ -30,7 +30,7 @@ export interface Treino {
 export const createTeacher = async () => {
   const teacherRef = doc(db, "teachers", "teacher_main");
   await setDoc(teacherRef, {
-    name: "Ewerthon",
+    name: "Francis",
     email: "professor@email.com",
     createdAt: serverTimestamp(),
   });

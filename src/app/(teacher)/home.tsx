@@ -296,12 +296,15 @@ export default function HomeProfessor() {
     <View
       style={{
         height: 1.5,
+        width: 125,
+        alignSelf: "center",
         backgroundColor: colors.yellow,
         marginVertical: 10,
+        top: 65
       }}
     />
   )}
-  contentContainerStyle={{ paddingBottom: 80 }} // 🔹 espaço extra p/ último card não ficar colado
+  contentContainerStyle={{ paddingBottom: 100 }} // 🔹 espaço extra p/ último card não ficar colado
 />
 
       </View>

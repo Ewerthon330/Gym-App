@@ -1076,6 +1076,11 @@
   resolved "https://registry.npmjs.org/@expo-google-fonts/merienda/-/merienda-0.4.1.tgz"
   integrity sha512-WlTw6ntkb3RyV8ZR6ZBPgA9r32/yUMidrlxoerzLVLYsAOEK6PKmcYsOTEw98Fwv3Rxsl/Xnq6F00b0foSL7Dw==
 
+"@expo-google-fonts/michroma@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@expo-google-fonts/michroma/-/michroma-0.4.2.tgz#c3a352322a8f92727d13d62c75f002dabe085bea"
+  integrity sha512-Z5qNDpcZnDNFcX668OqaFFUZ0qrazi8BDrgjylE41RDbMY6S5qYjZsnggnaXUOidKl7V1Zqypb09XjNF0nbqBw==
+
 "@expo-google-fonts/roboto@^0.4.0":
   version "0.4.0"
   resolved "https://registry.npmjs.org/@expo-google-fonts/roboto/-/roboto-0.4.0.tgz"
@@ -4254,7 +4259,7 @@ expo-asset@~11.1.7:
 
 expo-auth-session@~6.2.1:
   version "6.2.1"
-  resolved "https://registry.yarnpkg.com/expo-auth-session/-/expo-auth-session-6.2.1.tgz#27c645575ce98508ed8a0faf2c586b04e1a1ba15"
+  resolved "https://registry.npmjs.org/expo-auth-session/-/expo-auth-session-6.2.1.tgz"
   integrity sha512-9KgqrGpW7PoNOhxJ7toofi/Dz5BU2TE4Q+ktJZsmDXLoFcNOcvBokh2+mkhG58Qvd/xJ9Z5sAt/5QoOFaPb9wA==
   dependencies:
     expo-application "~6.1.5"
@@ -6683,6 +6688,11 @@ react-native-is-edge-to-edge@^1.1.6, react-native-is-edge-to-edge@^1.1.7:
   version "1.2.1"
   resolved "https://registry.npmjs.org/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.2.1.tgz"
   integrity sha512-FLbPWl/MyYQWz+KwqOZsSyj2JmLKglHatd3xLZWskXOpRaio4LfEDEz8E/A6uD8QoTHW6Aobw1jbEwK7KMgR7Q==
+
+react-native-pager-view@^6.9.1:
+  version "6.9.1"
+  resolved "https://registry.npmjs.org/react-native-pager-view/-/react-native-pager-view-6.9.1.tgz"
+  integrity sha512-uUT0MMMbNtoSbxe9pRvdJJKEi9snjuJ3fXlZhG8F2vVMOBJVt/AFtqMPUHu9yMflmqOr08PewKzj9EPl/Yj+Gw==
 
 react-native-reanimated@~3.17.4:
   version "3.17.5"

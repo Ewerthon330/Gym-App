@@ -1,5 +1,5 @@
 import colors from '@/styles/colors';
-import { fonts, useAppFonts } from '@/styles/fonts'; // ✅ importar também fonts
+import { fonts, useAppFonts } from '@/styles/fonts';
 import globalStyles from '@/styles/styles';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +24,6 @@ import { getUserWorkouts } from '../../services/api';
 import { db } from '../../services/firebase';
 
 const initialLayout = { width: Dimensions.get('window').width };
-
 const diasSemana = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 interface Treino {
@@ -32,6 +31,7 @@ interface Treino {
   videoUrl: string;
   day: string;
   volume: string;
+  rest: string;
 }
 
 export default function Home() {
@@ -48,62 +48,31 @@ export default function Home() {
 
   const [menuAberto, setMenuAberto] = useState(false);
   const [exerciciosFeitos, setExerciciosFeitos] = useState<Record<string, boolean>>({});
+  const fontsLoaded = useAppFonts();
 
-  const fontsLoaded = useAppFonts(); // ✅ hook para carregar fontes
-
-  // Animações para menu e overlay
-  const fadeAnim = useRef(new Animated.Value(0)).current; 
-  const slideAnim = useRef(new Animated.Value(150)).current; 
-  const overlayAnim = useRef(new Animated.Value(0)).current; 
+  // animações
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(150)).current;
+  const overlayAnim = useRef(new Animated.Value(0)).current;
 
   const abrirMenu = () => {
     setMenuAberto(true);
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: 0.5,
-        duration: 250,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
+      Animated.timing(overlayAnim, { toValue: 0.5, duration: 250, useNativeDriver: true }),
     ]).start();
   };
 
   const fecharMenu = () => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 150,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 150, duration: 200, useNativeDriver: true }),
+      Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start(() => setMenuAberto(false));
   };
 
-  const toggleMenu = () => {
-    if (menuAberto) {
-      fecharMenu();
-    } else {
-      abrirMenu();
-    }
-  };
+  const toggleMenu = () => (menuAberto ? fecharMenu() : abrirMenu());
 
   const handleLogout = async () => {
     try {
@@ -125,22 +94,22 @@ export default function Home() {
     React.useCallback(() => {
       const onBackPress = () => {
         Alert.alert(
-          "Sair do app",
-          "Você realmente deseja sair?",
+          'Sair do app',
+          'Você realmente deseja sair?',
           [
-            { text: "Cancelar", style: "cancel" },
-            { text: "Sim", onPress: () => BackHandler.exitApp() },
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Sim', onPress: () => BackHandler.exitApp() },
           ],
           { cancelable: true }
         );
-        return true; // impede o comportamento padrão
+        return true;
       };
 
-      const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
-
-    return () => subscription.remove();
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
     }, [])
   );
+
   useEffect(() => {
     const carregarTreinos = async () => {
       try {
@@ -151,18 +120,15 @@ export default function Home() {
         if (userSnap.exists()) {
           setUserName(userSnap.data().name);
         } else {
-          console.log('Documento do usuário não encontrado');
           setUserName('Usuário');
         }
 
         const treinos = await getUserWorkouts(user.id);
         const agrupado: Record<string, any[]> = {};
-
         diasSemana.forEach((dia) => (agrupado[dia] = []));
         treinos.forEach((treino: Treino) => {
           agrupado[treino.day]?.push(treino);
         });
-
         setTreinosPorDia(agrupado);
       } catch (err) {
         console.error('Erro ao carregar treinos:', err);
@@ -170,85 +136,70 @@ export default function Home() {
         setLoading(false);
       }
     };
-
     carregarTreinos();
   }, [user]);
 
   const renderScene = ({ route }: { route: { key: string } }) => {
-  const treinos = treinosPorDia[route.key] || [];
+    const treinos = treinosPorDia[route.key] || [];
+    return (
+      <FlatList
+        style={globalStyles.containerStyle}
+        data={treinos}
+        keyExtractor={(_, index) => index.toString()}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        renderItem={({ item: treino }) => (
+          <View style={globalStyles.card}>
+            <Pressable
+              onPress={() => toggleFeito(treino.name)}
+              style={{
+                marginRight: 10,
+                width: 22,
+                height: 22,
+                borderRadius: 11,
+                borderWidth: 2,
+                borderColor: colors.black,
+                alignItems: 'center',
+                justifyContent: 'center',
+                left: 330,
+                top: 128,
+                backgroundColor: exerciciosFeitos[treino.name] ? colors.green : 'transparent',
+              }}
+            >
+              {exerciciosFeitos[treino.name] && (
+                <Ionicons name="checkmark" size={14} color={colors.white} />
+              )}
+            </Pressable>
 
-  return (
-    <FlatList style={globalStyles.containerStyle}
-      data={treinos}
-      keyExtractor={(_, index) => index.toString()}
-      contentContainerStyle={{ paddingBottom: 80 }} // espaço extra no fim
-      renderItem={({ item: treino }) => (
-        <View style={globalStyles.card}>
-          <Pressable
-            onPress={() => toggleFeito(treino.name)}
+            <Text style={globalStyles.textNameExercise}>{treino.name}</Text>
+            <Text style={globalStyles.volume}>Volume:</Text>
+            <Text style={globalStyles.textVolumeExercise}>{treino.volume}</Text>
+            <Text style={globalStyles.rest}>Descanso:</Text>
+            <Text style={globalStyles.textRestExercise}>{treino.rest}</Text>
+
+            <Pressable
+              style={globalStyles.buttonShowVideo}
+              onPress={() => Linking.openURL(treino.videoUrl)}
+            >
+              <Text style={globalStyles.textShowVideo}>Ver execução</Text>
+            </Pressable>
+          </View>
+        )}
+        ListEmptyComponent={
+          <Text
             style={{
-              marginRight: 10,
-              width: 22,
-              height: 22,
-              borderRadius: 11,
-              borderWidth: 2,
-              borderColor: colors.black,
-              alignItems: 'center',
+              fontStyle: 'italic',
+              color: colors.lightGray,
               justifyContent: 'center',
-              left: 330,
-              top: 128,
-              backgroundColor: exerciciosFeitos[treino.name]
-                ? colors.green
-                : 'transparent',
+              left: 15,
             }}
           >
-            {exerciciosFeitos[treino.name] && (
-              <Ionicons name="checkmark" size={14} color={colors.white} />
-            )}
-          </Pressable>
+            Nenhum treino cadastrado para este dia.
+          </Text>
+        }
+      />
+    );
+  };
 
-          <Text style={globalStyles.textNameExercise}>
-            {treino.name}
-          </Text>
-          <Text style={globalStyles.volume}>
-            Volume:
-          </Text>
-          <Text style={globalStyles.textVolumeExercise}>
-            {treino.volume}
-          </Text>
-          <Text style={globalStyles.rest}>
-            Descanso:
-          </Text>
-          <Text style={globalStyles.textRestExercise}>
-            {treino.rest}
-          </Text>
-
-          <Pressable
-            style={globalStyles.buttonShowVideo}
-            onPress={() => Linking.openURL(treino.videoUrl)}
-          >
-            <Text style={globalStyles.textShowVideo}>Ver execução</Text>
-          </Pressable>
-        </View>
-      )}
-      ListEmptyComponent={
-        <Text
-          style={{
-            fontStyle: 'italic',
-            color: colors.lightGray,
-            justifyContent: 'center',
-            left: 15,
-          }}
-        >
-          Nenhum treino cadastrado para este dia.
-        </Text>
-      }
-    />
-  );
-};
-
-
-  // ✅ Esperar fontes carregarem
   if (!fontsLoaded || loading) {
     return (
       <View style={globalStyles.loadingContainer}>
@@ -259,15 +210,13 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.yellow }}>
-      <Text style={{ ...globalStyles.bemVindo}}>
-        Olá, {userName || 'Usuário'}
-      </Text>
+      <Text style={globalStyles.bemVindo}>Olá, {userName || 'Usuário'}</Text>
 
       <Pressable
         onPress={toggleMenu}
         style={{
           position: 'absolute',
-          top: 50,
+          top: 60,
           right: 20,
           zIndex: 10,
           padding: 5,
@@ -275,11 +224,11 @@ export default function Home() {
       >
         <Ionicons name="menu" size={28} color="black" />
       </Pressable>
-      
+
       <View style={globalStyles.viewHomeUser}>
         <Text style={globalStyles.textHomeUser}>Rotina de Treinos</Text>
       </View>
-      {/* Overlay semitransparente */}
+
       {menuAberto && (
         <TouchableWithoutFeedback onPress={fecharMenu}>
           <Animated.View
@@ -299,47 +248,67 @@ export default function Home() {
 
       {menuAberto && (
         <Animated.View
-          style={{... globalStyles.menuUser, opacity: fadeAnim, transform: [{ translateX: slideAnim }]}}>
+          style={{
+            ...globalStyles.menuUser,
+            opacity: fadeAnim,
+            transform: [{ translateX: slideAnim }],
+          }}
+        >
+          {/* Botão de contato via WhatsApp */}
           <Pressable
-            onPress={() => {
-              const phoneNumber = '5511984402797';
-              const url = `https://wa.me/${phoneNumber}`;
+            onPress={async () => {
+              const phoneNumber = "5511984402797"; // DDI + DDD + número
+              const message = "Olá, gostaria de falar sobre os treinos.";
 
-              Linking.canOpenURL(url)
-                .then((supported) => {
-                  if (supported) {
-                    Linking.openURL(url);
-                  } else {
-                    alert('Não foi possível abrir o WhatsApp');
-                  }
-                })
-                .catch(() => alert('Erro ao tentar abrir o WhatsApp'));
+              const appUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+              const webUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+              try {
+                const supported = await Linking.canOpenURL(appUrl);
+
+                if (supported) {
+                  await Linking.openURL(appUrl);
+                } else {
+                  // fallback para navegador → redireciona para o app se estiver instalado
+                  await Linking.openURL(webUrl);
+                }
+              } catch {
+                Alert.alert("Erro", "Não foi possível abrir o WhatsApp.");
+              }
             }}
-            style={{
-              alignItems: 'center',
-              width: 80,
-              position: 'absolute',
-              left: 80,
-              zIndex: 1
-            }}
-          >
-            <Text style={{...globalStyles.contact, fontFamily: fonts.robotoRegular}}>Contato</Text>
-            <Ionicons name='call-outline' size={25} color={colors.yellow} />
-          </Pressable>
-          <Pressable
-            onPress={handleLogout}
             style={{
               alignItems: 'center',
               alignSelf: "center",
               width: 80,
               position: 'absolute',
-              top: 60,
-              right: 20,
-              zIndex: 1
+              bottom: 70,
+              left: 85,
+              zIndex: 1,
             }}
           >
-            <Text style={{...globalStyles.logoutUser, fontFamily: fonts.robotoRegular}}>Sair</Text>
-            <Ionicons name='log-out-outline' size={25} color={colors.red} />
+            <Text style={{ ...globalStyles.contact, fontFamily: fonts.merienda }}>
+              Contato
+            </Text>
+            <Ionicons name="call-outline" size={25} color={colors.yellow} />
+          </Pressable>
+
+          {/* Botão de logout */}
+          <Pressable
+            onPress={handleLogout}
+            style={{
+              alignItems: 'center',
+              alignSelf: 'center',
+              width: 80,
+              position: 'absolute',
+              top: 50,
+              right: 15,
+              zIndex: 1,
+            }}
+          >
+            <Text style={{ ...globalStyles.logoutUser, fontFamily: fonts.merienda }}>
+              Sair
+            </Text>
+            <Ionicons name="log-out-outline" size={25} color={colors.red} />
           </Pressable>
         </Animated.View>
       )}

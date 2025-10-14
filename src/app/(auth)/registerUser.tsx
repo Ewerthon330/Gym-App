@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput } from 'react-native';
 import { db } from '../../services/firebase';
 
-const DEFAULT_TEACHER_ID = 'user_31Tj6VqeQJiBGsMlU4GDUQLe7ri';
+const DEFAULT_TEACHER_ID = 'user_32krX7bfypxTH9N05q2xsQGKzsH';
 
 export default function RegisterUser() {
   const [name, setName] = useState('');
