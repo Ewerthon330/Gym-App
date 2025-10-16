@@ -91,7 +91,7 @@ function AuthGuard() {
 export default function RootLayout() {
   return (
     <ClerkProvider
-      publishableKey="pk_test_ZGlzdGluY3QtbW9vc2UtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA"
+      publishableKey={process.env.EXPO_PUBLIC_PUBLISHABLE_KEY}
       tokenCache={tokenCache}
     >
       <AuthGuard />

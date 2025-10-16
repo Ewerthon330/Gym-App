@@ -584,7 +584,7 @@ const globalStyles = StyleSheet.create({
   },
   title: {
     fontFamily: "Michroma_400Regular",
-    fontSize: 60,
+    fontSize: 45,
     justifyContent: "center",
     marginBottom: 25,
     textAlign: "center",

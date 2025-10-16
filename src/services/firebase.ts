@@ -3,12 +3,12 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBW86vjdd7EYj2s-Jt22mz9a3d4kGHGXhM",
-  authDomain: "gym-app-3c78c.firebaseapp.com",
-  projectId: "gym-app-3c78c",
-  storageBucket: "gym-app-3c78c.appspot.com",
-  messagingSenderId: "240958036841",
-  appId: "1:240958036841:android:d723704e8c37e71164fbf8"
+  apiKey: process.env.EXPO_PUBLIC_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
