@@ -87,7 +87,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.trustfitness.gymapp'
+    namespace "com.personaltrust"
     defaultConfig {
         applicationId 'com.trustfitness.gymapp'
         minSdkVersion rootProject.ext.minSdkVersion
