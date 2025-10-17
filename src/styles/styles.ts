@@ -34,11 +34,11 @@ const globalStyles = StyleSheet.create({
   },
   bemVindo: {
     color: colors.black,
-    fontFamily: fonts.fascinate,
+    fontFamily: fonts.michroma,
     fontSize: 30,
     padding: 30,
     right: 15,
-    top: 25
+    top: 15
   },
   button: {
     alignItems: "center",
@@ -187,6 +187,7 @@ const globalStyles = StyleSheet.create({
   containerHomeUser: {
     backgroundColor: colors.yellow,
     flex: 1,
+    bottom: 10
   },
   containerProfileId: {
     backgroundColor: colors.yellow,
@@ -197,12 +198,12 @@ const globalStyles = StyleSheet.create({
     borderRadius: 20,
     flex: 1,
     justifyContent: "center",
-    top: 70,
+    top: 80,
   },
   containerStyle: {
     backgroundColor: colors.darkGray,
     paddingBottom: 16,
-    paddingTop: 30,
+    paddingTop: 20,
   },
   dayLabel: {
     fontSize: 20,
@@ -325,10 +326,10 @@ const globalStyles = StyleSheet.create({
     height: 70,
     padding: 10,
     position: 'absolute',
-    right: 20,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    right: 0,
+    shadowColor: colors.lightGray,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
     shadowRadius: 4,
     top: 110,
     width: 90,
@@ -396,7 +397,7 @@ const globalStyles = StyleSheet.create({
     color: colors.red,
     fontFamily: fonts.roboto700B,
     fontSize: 17,
-    left: 10,
+    left: 13,
     textDecorationLine: "underline",
   },
   saveButton: {
@@ -464,7 +465,7 @@ const globalStyles = StyleSheet.create({
   textButtonCad: {
     color: colors.black,
     fontSize: 15,
-    left: 70,
+    alignSelf: 'center',
     textDecorationLine: "underline",
     top: 20,
   },
@@ -582,8 +583,8 @@ const globalStyles = StyleSheet.create({
     top: 23,
   },
   title: {
-    fontFamily: "FascinateInline_400Regular",
-    fontSize: 70,
+    fontFamily: "Michroma_400Regular",
+    fontSize: 45,
     justifyContent: "center",
     marginBottom: 25,
     textAlign: "center",
@@ -595,11 +596,12 @@ const globalStyles = StyleSheet.create({
     top: 50,
   },
   titleProfileId: {
-    alignSelf: "center",
+    alignItems: "center",
     color: colors.black,
-    fontFamily: fonts.fascinate,
-    fontSize: 30,
+    fontFamily: fonts.michroma,
+    fontSize: 25,
     justifyContent: "center",
+    left: 60,
     top: 55,
   },
   video: {
@@ -612,7 +614,7 @@ const globalStyles = StyleSheet.create({
     backgroundColor: colors.darkGray,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    elevation: 1,
+    bottom: 10
   },
   viewProfileId: {
     backgroundColor: colors.darkGray,
@@ -625,7 +627,7 @@ const globalStyles = StyleSheet.create({
     color: colors.green,
     fontFamily: fonts.roboto700B,
     fontSize: 17,
-    left: 10,
+    left: 13,
     textDecorationLine: "underline",
   },
 });

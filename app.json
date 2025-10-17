@@ -1,12 +1,16 @@
 {
   "expo": {
-    "name": "Gym-App",
+    "name": "Personal Trust",
     "slug": "Gym-App",
+    "owner": "ewedevelopment",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "gymapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
+    "icon": "./assets/images/icon.png",
+    
     "splash": {
       "image": "./assets/images/LogoTrustFitness.png",
       "resizeMode": "contain",
@@ -21,12 +25,13 @@
     },
     "android": {
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ],
       "package": "com.trustfitness.gymapp",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
@@ -41,7 +46,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/LogoTrustFitness.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -56,10 +61,17 @@
       ],
       "expo-secure-store",
       "expo-video",
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "04479b21-b974-4fe8-ae91-408c74a0c03f"
+      }
     }
   }
 }

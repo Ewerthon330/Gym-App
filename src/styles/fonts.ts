@@ -3,9 +3,9 @@ import { useFonts } from "expo-font";
 import { StyleSheet } from "react-native";
 
 // Importando as fontes do Google Fonts
-import { FascinateInline_400Regular } from "@expo-google-fonts/fascinate-inline";
 import { Merienda_400Regular } from "@expo-google-fonts/merienda";
-import { Roboto_400Regular, Roboto_500Medium_Italic, Roboto_700Bold } from "@expo-google-fonts/roboto";
+import { Michroma_400Regular } from "@expo-google-fonts/michroma";
+import { Roboto_400Regular, Roboto_700Bold } from "@expo-google-fonts/roboto";
 import { VastShadow_400Regular } from "@expo-google-fonts/vast-shadow";
 
 import colors from "./colors";
@@ -13,10 +13,9 @@ import colors from "./colors";
 // 🔹 Hook para carregar todas as fontes
 export function useAppFonts() {
   const [fontsLoaded] = useFonts({
-    FascinateInline_400Regular,
     Merienda_400Regular,
+    Michroma_400Regular,
     Roboto_400Regular,
-    Roboto_500Medium_Italic,
     Roboto_700Bold,
     VastShadow_400Regular,
   });
@@ -26,10 +25,9 @@ export function useAppFonts() {
 
 // 🔹 Exportar nomes das fontes
 export const fonts = {
-  fascinate: "FascinateInline_400Regular",
   merienda: "Merienda_400Regular",
+  michroma: "Michroma_400Regular",
   roboto700B: "Roboto_700Bold",
-  roboto500I: "Roboto_500Medium_Italic",
   robotoRegular: "Roboto_400Regular",
   vastShadow: "VastShadow_400Regular",
 };
@@ -48,10 +46,9 @@ export const buttonStyles = StyleSheet.create({
     elevation: 5,
   },
   text: {
-    fontFamily: fonts.merienda, // fonte Merienda
+    fontFamily: fonts.merienda,
     color: colors.lightGray,
     fontSize: 18,
     textAlign: "center",
-    fontWeight: "bold"
   },
 });

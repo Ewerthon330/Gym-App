@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput } from 'react-native';
 import { db } from '../../services/firebase';
 
-const DEFAULT_TEACHER_ID = 'user_31Tj6VqeQJiBGsMlU4GDUQLe7ri';
+const DEFAULT_TEACHER_ID = 'user_32krX7bfypxTH9N05q2xsQGKzsH';
 
 export default function RegisterUser() {
   const [name, setName] = useState('');
@@ -67,8 +67,17 @@ export default function RegisterUser() {
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.yellow }} behavior={Platform.OS === 'android' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: colors.yellow }} keyboardShouldPersistTaps="handled">
           <Text style={globalStyles.title}>Verifique seu Email</Text>
-          <TextInput style={globalStyles.input} placeholder="Código" value={code} onChangeText={setCode} editable={!isLoading} />
-          <Pressable style={globalStyles.buttonRegisterUser} onPress={handleVerify} disabled={isLoading}>
+          <TextInput style={globalStyles.input}
+            placeholder="Código"
+            value={code}
+            onChangeText={setCode}
+            editable={!isLoading}
+          />
+          <Pressable
+            style={globalStyles.buttonRegisterUser}
+            onPress={handleVerify}
+            disabled={isLoading}
+          >
             <Text style={buttonStyles.text}>{isLoading ? 'Verificando...' : 'Verificar'}</Text>
           </Pressable>
           {isLoading && <ActivityIndicator style={{ marginTop: 10 }} />}
@@ -80,17 +89,44 @@ export default function RegisterUser() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.yellow  }} behavior={Platform.OS === 'android' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: colors.yellow  }} keyboardShouldPersistTaps="handled">
-        <Pressable onPress={() => router.push('/(auth)/loginUser')} style={globalStyles.backButton}>
+        <Pressable
+          onPress={() => router.push('/(auth)/loginUser')}
+          style={globalStyles.backButton}
+        >
           <Ionicons name="arrow-back" size={30} color={colors.black} />
         </Pressable>
 
         <Text style={globalStyles.title}>Cadastro do Aluno</Text>
 
-        <TextInput style={globalStyles.input} placeholder="Primeiro Nome" value={name} onChangeText={setName} editable={!isLoading} />
-        <TextInput style={globalStyles.input} placeholder="Digite seu Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" editable={!isLoading} />
-        <TextInput style={globalStyles.input} placeholder="Digite sua Senha" value={password} onChangeText={setPassword} secureTextEntry editable={!isLoading} />
+        <TextInput
+          style={globalStyles.input}
+          placeholder="Primeiro Nome"
+          value={name}
+          onChangeText={setName}
+          editable={!isLoading}
+        />
+        <TextInput
+          style={globalStyles.input}
+          placeholder="Digite seu Email"
+          value={email} 
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          editable={!isLoading}
+        />
+        <TextInput
+          style={globalStyles.input}
+          placeholder="Digite sua Senha"
+          value={password}
+          onChangeText={setPassword}secureTextEntry
+          editable={!isLoading}
+        />
 
-        <Pressable style={globalStyles.buttonRegisterUser} onPress={handleSignUp} disabled={isLoading}>
+        <Pressable
+          style={globalStyles.buttonRegisterUser}
+          onPress={handleSignUp}
+          disabled={isLoading}
+        >
           <Text style={buttonStyles.text}>{isLoading ? 'Carregando...' : 'Cadastrar-se'}</Text>
         </Pressable>
 

@@ -1,11 +1,44 @@
-import { buttonStyles, useAppFonts } from "@/styles/fonts"; // 🔹 importa hook e estilos de botão
+import { useEffect, useRef } from "react";
+import { BackHandler, Alert } from "react-native";
+import { buttonStyles, useAppFonts } from "@/styles/fonts";
 import globalStyles from "@/styles/styles";
 import { router } from "expo-router";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 export default function OnBoarding() {
-  // 🔹 Carrega todas as fontes do fonts.ts
   const fontsLoaded = useAppFonts();
+  const backPressCount = useRef(0);
+
+  useEffect(() => {
+    const backAction = () => {
+      if (backPressCount.current === 0) {
+        backPressCount.current += 1;
+
+        Alert.alert(
+          "Sair do app",
+          "Pressione voltar novamente para sair.",
+          [{ text: "OK", onPress: () => {} }],
+          { cancelable: true }
+        );
+
+        setTimeout(() => {
+          backPressCount.current = 0;
+        }, 2000);
+
+        return true; // 🔹 Impede voltar pra Splash
+      } else {
+        BackHandler.exitApp();
+        return true;
+      }
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   if (!fontsLoaded) {
     return (
@@ -17,18 +50,19 @@ export default function OnBoarding() {
 
   return (
     <View style={globalStyles.container}>
-      {/* 🔹 Título */}
-      <Text style={{ ...globalStyles.title, fontFamily: "FascinateInline_400Regular" }}>
-        Personal Trust
-      </Text>
+      <Text style={globalStyles.title}>Personal Trust</Text>
 
-      {/* 🔹 Botão Aluno */}
-      <Pressable style={globalStyles.buttonOnBoarding} onPress={() => router.push("/(auth)/loginUser")}>
+      <Pressable
+        style={globalStyles.buttonOnBoarding}
+        onPress={() => router.push("/(auth)/loginUser")}
+      >
         <Text style={buttonStyles.text}>Aluno</Text>
       </Pressable>
 
-      {/* 🔹 Botão Professor */}
-      <Pressable style={buttonStyles.onBoarding} onPress={() => router.push("/(auth)/loginTeacher")}>
+      <Pressable
+        style={buttonStyles.onBoarding}
+        onPress={() => router.push("/(auth)/loginTeacher")}
+      >
         <Text style={buttonStyles.text}>Professor</Text>
       </Pressable>
     </View>
